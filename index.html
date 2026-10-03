@@ -2,223 +2,300 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=https://github.com/git26866/agente-mercados/blob/main/PANEL.md">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Observador Financiero</title>
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0a1020">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
 <style>
-/* Layout: una columna de trabajo (máx. 960px) — estado arriba, activos, regla general, cartera; barra de acciones fija abajo */
+/* Layout: app de una columna (máx. 1100px): barra superior · tarjeta de patrimonio + distribución · pestañas Activos / Cartera · barra de cambios fija abajo. Móvil: navegación inferior. */
 :root{
-  --bg:#f3f5f4; --surface:#ffffff; --ink:#14201c; --muted:#5d6b66; --line:#d9e0dd;
-  --accent:#0f6b5c; --accent-ink:#ffffff; --up:#13804f; --down:#c0392b; --warn:#a86a00;
-  --up-bg:#e3f4ea; --down-bg:#fbe7e4; --chip:#e9eeec;
-  --f-display:"Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
-  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --bg:#eef1f7; --bg2:#e4e8f1; --card:#ffffff; --card2:#f6f8fc; --ink:#0e1528; --muted:#5f6b85; --line:#dde2ee;
+  --accent:#3b5bff; --accent2:#7a5cff; --accent-ink:#ffffff; --up:#0f9d6b; --down:#e0444b; --warn:#c98a12;
+  --up-bg:rgba(15,157,107,.12); --down-bg:rgba(224,68,75,.12); --accent-bg:rgba(59,91,255,.10);
+  --shadow:0 1px 2px rgba(14,21,40,.06), 0 8px 24px rgba(14,21,40,.06);
+  --f-ui:"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-num:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  --r:16px;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#0f1513; --surface:#17201d; --ink:#e6eeeb; --muted:#93a39d; --line:#2a3632;
-  --accent:#43b59c; --accent-ink:#06120f; --up:#4cc98a; --down:#ff7a6b; --warn:#e3a43a;
-  --up-bg:#16301f; --down-bg:#3a1a17; --chip:#22302b; color-scheme:dark } }
+  --bg:#080d1a; --bg2:#0c1324; --card:#111a2e; --card2:#16213a; --ink:#e8edf8; --muted:#8c98b4; --line:#1f2b46;
+  --accent:#6d86ff; --accent2:#a28bff; --accent-ink:#ffffff; --up:#2fd39a; --down:#ff6b72; --warn:#f0b54a;
+  --up-bg:rgba(47,211,154,.13); --down-bg:rgba(255,107,114,.13); --accent-bg:rgba(109,134,255,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.25); color-scheme:dark } }
 :root[data-theme="dark"]{
-  --bg:#0f1513; --surface:#17201d; --ink:#e6eeeb; --muted:#93a39d; --line:#2a3632;
-  --accent:#43b59c; --accent-ink:#06120f; --up:#4cc98a; --down:#ff7a6b; --warn:#e3a43a;
-  --up-bg:#16301f; --down-bg:#3a1a17; --chip:#22302b; color-scheme:dark }
+  --bg:#080d1a; --bg2:#0c1324; --card:#111a2e; --card2:#16213a; --ink:#e8edf8; --muted:#8c98b4; --line:#1f2b46;
+  --accent:#6d86ff; --accent2:#a28bff; --accent-ink:#ffffff; --up:#2fd39a; --down:#ff6b72; --warn:#f0b54a;
+  --up-bg:rgba(47,211,154,.13); --down-bg:rgba(255,107,114,.13); --accent-bg:rgba(109,134,255,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.25); color-scheme:dark }
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);padding:0 16px calc(96px + env(safe-area-inset-bottom,0px));}
-.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:20px;padding-block:24px}
-h1{font:700 clamp(26px,5vw,34px)/1.1 var(--f-display);letter-spacing:-.01em;margin:0;text-wrap:balance}
-h2{font:600 19px/1.2 var(--f-display);margin:0}
-.sub{color:var(--muted);margin:4px 0 0}
-.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
-.label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
-.status{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--chip);font-size:13px;color:var(--ink)}
-.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
-.pill.ok .dot{background:var(--up)} .pill.err .dot{background:var(--down)} .pill.run .dot{background:var(--warn);animation:pulse 1s infinite}
-@keyframes pulse{50%{opacity:.3}}
-@media (prefers-reduced-motion:reduce){.pill.run .dot{animation:none}}
-section{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
-.sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
-input,select,button{font:inherit;color:inherit}
-input,select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0;width:100%}
-input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button{cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);padding:8px 14px;font-weight:500}
-button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-button.ghost{background:transparent;border-color:transparent;color:var(--muted);padding:6px 8px}
-button.ghost:hover{color:var(--down)}
-button:disabled{opacity:.45;cursor:not-allowed}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-ui);-webkit-font-smoothing:antialiased;
+  padding:0 16px calc(110px + env(safe-area-inset-bottom,0px));}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.muted{color:var(--muted)}
+.label{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+input,select{width:100%;min-width:0;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:11px 16px;font-weight:600;font-size:14.5px;background:var(--card2);border:1px solid var(--line);color:var(--ink)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;color:var(--accent-ink);box-shadow:0 6px 18px rgba(59,91,255,.28)}
+.btn.danger{color:var(--down);background:var(--down-bg);border-color:transparent}
+.btn.block{width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px;padding-block:18px}
 
-/* filas de activos */
-.rows{display:flex;flex-direction:column}
-.row{display:grid;grid-template-columns:minmax(150px,1.6fr) 1fr .8fr 1fr 1fr .7fr 32px;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
-.row.head{border-top:0;padding-top:0}
-.row .name{min-width:0}
-.row .name b{display:block;font-weight:600;overflow-wrap:anywhere}
-.row .name small{color:var(--muted);font-family:var(--f-mono);font-size:12px}
-.chg.up{color:var(--up)} .chg.down{color:var(--down)}
-.row.hit-low{background:linear-gradient(90deg,var(--down-bg),transparent 70%)}
-.row.hit-high{background:linear-gradient(90deg,var(--up-bg),transparent 70%)}
-.tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;font-weight:600}
+/* ---------- login ---------- */
+.auth{min-height:100vh;display:grid;place-items:center;padding-block:32px}
+.auth-card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:32px 26px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;flex:none}
+.logo svg{width:24px;height:24px}
+.brand b{font-size:18px;font-weight:800;letter-spacing:-.02em;display:block;line-height:1.15}
+.brand span{font-size:12.5px;color:var(--muted)}
+.auth h1{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:6px 0 0;text-wrap:balance}
+.auth p{margin:0;color:var(--muted);font-size:14px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
+.check{display:flex;gap:10px;align-items:center;font-size:13.5px;color:var(--muted)}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.err{color:var(--down);font-size:13.5px;margin:0}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--muted)}
+.steps b{color:var(--ink)}
+.steps a{color:var(--accent)}
+code{font-family:var(--f-num);font-size:12.5px;background:var(--card2);border:1px solid var(--line);padding:1px 6px;border-radius:6px}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:12.5px;color:var(--muted);font-weight:500}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px var(--up-bg)}
+.pill.run .dot{background:var(--warn);box-shadow:0 0 0 3px rgba(240,181,74,.2);animation:pulse 1s infinite}
+.pill.bad .dot{background:var(--down);box-shadow:0 0 0 3px var(--down-bg)}
+@keyframes pulse{50%{opacity:.35}}
+.icon-btn{width:40px;height:40px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink)}
+.icon-btn svg{width:19px;height:19px}
+
+/* ---------- hero ---------- */
+.hero{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+@media (max-width:820px){.hero{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;min-width:0}
+.worth{position:relative;overflow:hidden;background:linear-gradient(150deg,#1d2b6b 0%,#3b5bff 55%,#7a5cff 100%);color:#fff;border:0}
+.worth::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%)}
+.worth .label{color:rgba(255,255,255,.75)}
+.worth .big{font:700 clamp(32px,6vw,44px)/1.05 var(--f-num);letter-spacing:-.03em;margin:8px 0 6px}
+.worth .sub{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:14px;color:rgba(255,255,255,.85)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font:600 12.5px var(--f-num);white-space:nowrap}
+.chip.up{background:var(--up-bg);color:var(--up)} .chip.down{background:var(--down-bg);color:var(--down)} .chip.flat{background:var(--card2);color:var(--muted)}
+.worth .chip{background:rgba(255,255,255,.16);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;position:relative;z-index:1}
+.kpi{background:rgba(255,255,255,.1);border-radius:12px;padding:10px 12px}
+.kpi b{display:block;font:600 16px var(--f-num)}
+.kpi span{font-size:11.5px;color:rgba(255,255,255,.75)}
+@media (max-width:420px){.kpis{grid-template-columns:1fr 1fr}.kpis .kpi:last-child{grid-column:1/-1}}
+.alloc{display:flex;gap:16px;align-items:center}
+.alloc svg{width:132px;height:132px;flex:none}
+.legend{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1}
+.legend div{display:flex;align-items:center;gap:8px;font-size:13px;min-width:0}
+.legend i{width:10px;height:10px;border-radius:3px;flex:none}
+.legend span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend em{font-style:normal;font-family:var(--f-num);color:var(--muted)}
+.empty-note{color:var(--muted);font-size:14px}
+
+/* ---------- tabs ---------- */
+.tabs{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.tab{padding:9px 16px;border-radius:10px;font-weight:600;font-size:14px;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--accent-bg);color:var(--accent)}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.section-head h2{font-size:19px;font-weight:800;letter-spacing:-.02em;margin:0}
+
+/* ---------- lista de activos ---------- */
+.list{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.item{display:grid;grid-template-columns:44px minmax(0,1.6fr) minmax(0,1fr) minmax(0,1.4fr) 24px;gap:14px;align-items:center;padding:14px 18px;border-top:1px solid var(--line);text-align:left;width:100%;transition:background .12s}
+.item:first-child{border-top:0}
+.item:hover{background:var(--card2)}
+.avatar{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font:700 13px var(--f-ui);color:#fff;letter-spacing:-.02em}
+.nm b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm small{color:var(--muted);font-size:12.5px;font-family:var(--f-num)}
+.px{text-align:right}
+.px b{display:block;font:600 15px var(--f-num)}
+.range{display:flex;flex-direction:column;gap:6px;min-width:0}
+.bar{position:relative;height:6px;border-radius:99px;background:linear-gradient(90deg,var(--down-bg),var(--card2) 50%,var(--up-bg))}
+.bar i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--card);border:3px solid var(--accent);transform:translate(-50%,-50%)}
+.range small{display:flex;justify-content:space-between;font:500 11.5px var(--f-num);color:var(--muted)}
+.range .none{font-size:12.5px;color:var(--muted);font-family:var(--f-ui)}
+.tag{display:inline-block;font:700 10.5px var(--f-ui);letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:2px}
 .tag.low{background:var(--down-bg);color:var(--down)} .tag.high{background:var(--up-bg);color:var(--up)}
-.mlabel{display:none}
+.chev{color:var(--muted)}
 @media (max-width:720px){
-  .row.head{display:none}
-  .row{grid-template-columns:1fr 1fr 1fr;grid-template-areas:"n n d" "p c ." "lo hi pc";gap:8px 10px;padding:14px 0}
-  .row .name{grid-area:n} .row .del{grid-area:d;justify-self:end;align-self:start}
-  .row > :nth-child(2){grid-area:p} .row > :nth-child(3){grid-area:c}
-  .row > :nth-child(4){grid-area:lo} .row > :nth-child(5){grid-area:hi} .row > :nth-child(6){grid-area:pc}
-  .mlabel{display:block;font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .item{grid-template-columns:40px minmax(0,1fr) auto;grid-template-areas:"a n p" "r r r";gap:10px 12px;padding:14px}
+  .item .avatar{grid-area:a;width:40px;height:40px} .item .nm{grid-area:n} .item .px{grid-area:p} .item .range{grid-area:r} .item .chev{display:none}
 }
-.add{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr .8fr auto;gap:8px;align-items:end}
-.add label,.field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
-@media (max-width:720px){.add{grid-template-columns:1fr 1fr}.add .wide{grid-column:1/-1}}
-.general{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-.general input{width:90px}
-.hint{color:var(--muted);font-size:13px;margin:0}
-.totals{display:flex;flex-wrap:wrap;gap:24px}
-.totals div{display:flex;flex-direction:column}
-.totals .big{font:600 22px var(--f-mono);font-variant-numeric:tabular-nums}
-.prow{display:grid;grid-template-columns:minmax(130px,1.4fr) 1fr 1fr 1fr 1.2fr 1.3fr 32px;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
-.prow.head{border-top:0;padding-top:0}
-@media (max-width:720px){.prow.head{display:none}.prow{grid-template-columns:1fr 1fr 32px}.prow .name{grid-column:1/3}.prow .del{grid-column:3;grid-row:1;justify-self:end}.prow > div:not(.name){grid-column:span 1}}
-.prow input{max-width:150px}
-.trade{display:grid;grid-template-columns:1fr 1.5fr 1fr 1fr auto;gap:8px;align-items:end}
-@media (max-width:720px){.trade{grid-template-columns:1fr 1fr}.trade .wide{grid-column:1/-1}}
-.empty{color:var(--muted);padding:12px 0;border-top:1px solid var(--line)}
+.general{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.switch{position:relative;width:44px;height:26px;flex:none}
+.switch input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:99px;background:var(--line);transition:.15s;pointer-events:none}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.switch input:checked + span{background:var(--accent)}
+.switch input:checked + span::after{transform:translateX(18px)}
+.general input[type=text]{width:72px;padding:7px 10px;text-align:center}
 
-/* barra inferior */
-.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));z-index:5}
-.bar .in{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
-.bar .msg{font-size:14px;color:var(--muted);min-width:0;flex:1 1 220px}
-.bar .msg.err{color:var(--down)} .bar .msg.ok{color:var(--up)}
-.bar .btns{display:flex;flex-wrap:wrap;gap:8px}
-.connect ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
-.connect a{color:var(--accent)}
-.connect .tokenrow{display:flex;gap:8px;flex-wrap:wrap}
-.connect .tokenrow input{flex:1 1 260px}
-code{font-family:var(--f-mono);font-size:13px;background:var(--chip);padding:1px 5px;border-radius:4px}
+/* ---------- hojas (modales) ---------- */
+.scrim{position:fixed;inset:0;background:rgba(5,8,18,.55);backdrop-filter:blur(3px);z-index:40;display:flex;align-items:flex-end;justify-content:center;padding:16px}
+@media (min-width:721px){.scrim{align-items:center}}
+.sheet{width:100%;max-width:480px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 32px);overflow:auto;box-shadow:var(--shadow);margin-bottom:env(safe-area-inset-bottom,0px)}
+.sheet h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.sheet .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.seg button{padding:9px;border-radius:9px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.sheet-actions{display:flex;gap:10px;flex-wrap:wrap}
+.sheet-actions .btn{flex:1}
+.hint{font-size:12.5px;color:var(--muted);margin:0;font-weight:400}
+
+/* ---------- barra de cambios y toasts ---------- */
+.savebar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;width:min(640px,calc(100% - 32px));background:var(--ink);color:var(--bg);border-radius:16px;padding:10px 10px 10px 18px;display:flex;align-items:center;gap:12px;justify-content:space-between;box-shadow:0 12px 32px rgba(0,0,0,.3)}
+.savebar span{font-size:14px;font-weight:600}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:50;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px;padding:12px 16px;font-size:14px;font-weight:600;max-width:calc(100% - 32px)}
+.toast.ok{border-color:var(--up);color:var(--up)} .toast.bad{border-color:var(--down);color:var(--down)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>Observador Financiero</h1>
-      <p class="sub">Panel del agente: qué vigila, en qué precios te avisa y tu cartera.</p>
-    </div>
-    <div class="status">
-      <span class="pill" id="pill-conn"><span class="dot"></span><span id="conn-text">Sin conectar</span></span>
-      <span class="pill" id="pill-run" hidden><span class="dot"></span><span id="run-text"></span></span>
+
+<!-- ============ ACCESO ============ -->
+<div class="auth" id="v-login" hidden>
+  <form class="auth-card" id="f-login" autocomplete="on">
+    <div class="brand"><div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg></div><div><b>Observador Financiero</b><span>Panel de tu agente de mercado</span></div></div>
+    <h1>Entra a tu panel</h1>
+    <input type="text" name="username" value="anton" autocomplete="username" hidden>
+    <label class="field">Contraseña <input id="l-pass" type="password" autocomplete="current-password" required></label>
+    <label class="check"><input id="l-remember" type="checkbox" checked> Mantener la sesión en este dispositivo</label>
+    <p class="err" id="l-err" hidden></p>
+    <button class="btn primary block" type="submit" id="l-btn">Entrar</button>
+  </form>
+</div>
+
+<!-- ============ CONFIGURACIÓN INICIAL ============ -->
+<div class="auth" id="v-setup" hidden>
+  <form class="auth-card" id="f-setup" autocomplete="off">
+    <div class="brand"><div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg></div><div><b>Observador Financiero</b><span>Configuración inicial · solo una vez</span></div></div>
+    <h1>Crea tu contraseña de acceso</h1>
+    <p>Después de esto entrarás desde cualquier dispositivo solo con tu contraseña.</p>
+    <ol class="steps">
+      <li>Abre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a></li>
+      <li>Nombre: <code>Panel web</code> · Expiración: <b>1 year</b></li>
+      <li>Repository access: <b>Only select repositories</b> → <code>agente-mercados</code> <b>y</b> <code>panel-agente</code></li>
+      <li>Permissions: <b>Contents</b> y <b>Actions</b> → <b>Read and write</b></li>
+      <li><b>Generate token</b>, cópiala y pégala aquí:</li>
+    </ol>
+    <label class="field">Clave de GitHub <input id="s-token" type="password" placeholder="github_pat_…" required></label>
+    <label class="field">Tu nueva contraseña del panel <input id="s-pass" type="password" autocomplete="new-password" minlength="8" required></label>
+    <label class="field">Repite la contraseña <input id="s-pass2" type="password" autocomplete="new-password" minlength="8" required></label>
+    <p class="hint">Mínimo 8 caracteres. La clave de GitHub queda cifrada con tu contraseña; sin la contraseña nadie puede usarla.</p>
+    <p class="err" id="s-err" hidden></p>
+    <button class="btn primary block" type="submit" id="s-btn">Guardar y entrar</button>
+  </form>
+</div>
+
+<!-- ============ PANEL ============ -->
+<div class="wrap" id="v-app" hidden>
+  <header class="top">
+    <div class="brand"><div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg></div><div><b>Observador Financiero</b><span id="updated">—</span></div></div>
+    <div class="top-actions">
+      <span class="pill" id="pill"><span class="dot"></span><span id="pill-t">Agente activo</span></span>
+      <button class="btn" id="b-summary" type="button" title="El bot te manda el resumen ahora">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Resumen a Telegram</button>
+      <button class="icon-btn" id="b-menu" type="button" aria-label="Ajustes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
     </div>
   </header>
 
-  <section class="connect" id="connect" hidden>
-    <h2>Conectar el panel con tu agente</h2>
-    <p class="hint">Se hace una sola vez en cada navegador. La clave queda guardada solo en este dispositivo.</p>
-    <ol>
-      <li>Abre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
-      <li>Nombre: <code>Panel agente</code>. Expiración: la que prefieras (por ejemplo 1 año).</li>
-      <li>En <b>Repository access</b> elige <b>Only select repositories</b> → <code>agente-mercados</code>.</li>
-      <li>En <b>Permissions → Repository permissions</b>: <b>Contents: Read and write</b> y <b>Actions: Read and write</b>.</li>
-      <li>Pulsa <b>Generate token</b>, cópialo y pégalo aquí:</li>
-    </ol>
-    <form class="tokenrow" id="token-form">
-      <input id="token" type="password" autocomplete="off" placeholder="github_pat_…" aria-label="Clave de acceso de GitHub">
-      <button class="primary" type="submit">Conectar</button>
-    </form>
-  </section>
-
-  <section id="assets-sec" hidden>
-    <div class="sec-head">
-      <h2>Activos vigilados</h2>
-      <span class="hint" id="updated"></span>
+  <section class="hero">
+    <div class="card worth">
+      <span class="label">Patrimonio en tu cartera</span>
+      <div class="big" id="w-total">—</div>
+      <div class="sub" id="w-sub"></div>
+      <div class="kpis">
+        <div class="kpi"><b id="k-usd">—</b><span>Activos en dólares</span></div>
+        <div class="kpi"><b id="k-pl">—</b><span>Ganancia / pérdida</span></div>
+        <div class="kpi"><b id="k-fx">—</b><span>Dólar (CLP)</span></div>
+      </div>
     </div>
-    <p class="hint">Piso: te aviso si el precio baja hasta ahí. Techo: si sube hasta ahí. Puedes poner varios niveles separados por <code>/</code>. Deja vacío para no usarlo.</p>
-    <div class="rows" id="rows"></div>
-    <form class="add" id="add-form">
-      <label class="wide">Agregar activo
-        <input id="add-sym" placeholder="BTC, AAPL, SQM-B, dólar…" autocomplete="off">
-      </label>
-      <label>Mercado
-        <select id="add-mkt">
-          <option value="auto">EE.UU. / cripto / divisa</option>
-          <option value="sn">Bolsa de Santiago</option>
-        </select>
-      </label>
-      <label>Piso <input id="add-low" inputmode="decimal" placeholder="opcional"></label>
-      <label>Techo <input id="add-high" inputmode="decimal" placeholder="opcional"></label>
-      <label>% día <input id="add-pct" inputmode="decimal" placeholder="opc."></label>
-      <button type="submit">Agregar</button>
-    </form>
-  </section>
-
-  <section id="general-sec" hidden>
-    <h2>Movimientos fuertes</h2>
-    <div class="general">
-      <label class="field" style="flex-direction:row;align-items:center;gap:10px">
-        <input type="checkbox" id="gen-on" style="width:auto">
-        Avisarme si <b>cualquier</b> activo sube o cae más de
-      </label>
-      <input id="gen-pct" inputmode="decimal" aria-label="Porcentaje general"> <span>% en el día</span>
+    <div class="card">
+      <div class="section-head" style="margin-bottom:12px"><span class="label">Distribución</span><span class="label" id="a-count"></span></div>
+      <div class="alloc" id="alloc"></div>
     </div>
   </section>
 
-  <section id="pf-sec" hidden>
-    <div class="sec-head"><h2>Mi cartera</h2><span class="hint">Valores con los últimos precios del agente</span></div>
-    <div class="totals" id="totals"></div>
-    <div id="prows"></div>
-    <form class="trade" id="trade-form">
-      <label>Operación
-        <select id="t-kind"><option value="buy">Compré</option><option value="sell">Vendí</option></select>
-      </label>
-      <label class="wide">Activo <input id="t-asset" list="t-list" placeholder="Bitcoin, AAPL, SQM-B.SN…" autocomplete="off"><datalist id="t-list"></datalist></label>
-      <label>Cantidad <input id="t-qty" inputmode="decimal" placeholder="0,05"></label>
-      <label>Precio <input id="t-price" inputmode="decimal" placeholder="actual"></label>
-      <button type="submit">Registrar</button>
-    </form>
-    <p class="hint">Corrige cantidad o precio promedio escribiendo en la tabla, o quita una posición con ✕. Si el activo no está en tu lista, se agrega solo (acciones chilenas con <code>.SN</code>, ej. <code>SQM-B.SN</code>).</p>
-    <p class="hint" id="trade-msg"></p>
-  </section>
-
-  <p class="hint" id="foot" hidden>Los cambios se guardan en tu repositorio privado <code>agente-mercados</code>. El bot de Telegram confirma cada revisión. <button class="ghost" id="logout" type="button">Desconectar este navegador</button></p>
-</div>
-
-<div class="bar" id="bar" hidden>
-  <div class="in">
-    <span class="msg" id="msg">Todo guardado.</span>
-    <div class="btns">
-      <button type="button" id="btn-summary">Enviar resumen a Telegram</button>
-      <button type="button" class="primary" id="btn-save" disabled>Guardar y aplicar</button>
+  <div class="section-head">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-assets" aria-selected="true" type="button">Activos y alertas</button>
+      <button class="tab" role="tab" id="t-pf" aria-selected="false" type="button">Mi cartera</button>
     </div>
+    <div id="tools-assets" class="top-actions">
+      <button class="btn primary" id="b-add" type="button">+ Agregar activo</button>
+    </div>
+    <div id="tools-pf" class="top-actions" hidden>
+      <button class="btn primary" id="b-trade" type="button">+ Registrar operación</button>
+    </div>
+  </div>
+
+  <div id="p-assets" style="display:flex;flex-direction:column;gap:12px">
+    <div class="card general" id="general">
+      <label class="switch"><input type="checkbox" id="g-on" aria-label="Activar aviso general"><span></span></label>
+      Avisarme si <b style="color:var(--ink)">cualquier</b> activo sube o cae más de
+      <input type="text" id="g-pct" inputmode="decimal" aria-label="Porcentaje"> % en el día
+    </div>
+    <div class="list" id="assets"></div>
+  </div>
+  <div id="p-pf" hidden>
+    <div class="list" id="holdings"></div>
   </div>
 </div>
 
+<!-- barra de guardado -->
+<div class="savebar" id="savebar" hidden>
+  <span id="savebar-t">Tienes cambios sin guardar</span>
+  <div style="display:flex;gap:8px">
+    <button class="btn" id="b-discard" type="button" style="background:transparent;border-color:rgba(127,127,127,.4);color:inherit">Descartar</button>
+    <button class="btn primary" id="b-save" type="button">Guardar y aplicar</button>
+  </div>
+</div>
+
+<!-- hojas -->
+<div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" hidden></div>
+
 <script>
 (() => {
-  const OWNER = "git26866", REPO = "agente-mercados", WF = "monitor.yml";
-  const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
-  const HEADER = "# =====================================================================\n#  LISTA DE ACTIVOS, ALERTAS Y CARTERA\n#  Puedes editarla aquí, desde el panel web o desde Telegram (/ayuda en tu bot).\n# =====================================================================\n#  above: [niveles] = techo · below: [niveles] = piso\n#  pct_up / pct_down = % diario por activo · settings.global_pct = % diario para todos\n#  source: yahoo (por defecto) | coingecko | buda | mindicador\n#  portfolio: tus compras (id del activo, cantidad, precio promedio)\n\n";
+  const OWNER = "git26866", AGENT = "agente-mercados", PANEL = "panel-agente", WF = "monitor.yml";
+  const API = r => `https://api.github.com/repos/${OWNER}/${r}`;
+  const VAULT_URL = `https://raw.githubusercontent.com/${OWNER}/${PANEL}/main/vault.json`;
+  const HEADER = "# =====================================================================\n#  LISTA DE ACTIVOS, ALERTAS Y CARTERA\n#  Se edita desde el panel web, Telegram (/ayuda) o aquí.\n# =====================================================================\n#  above: [niveles] = techo · below: [niveles] = piso\n#  pct_up / pct_down = % diario por activo · settings.global_pct = % diario para todos\n#  source: yahoo (por defecto) | coingecko | buda | mindicador\n#  portfolio: tus compras (id del activo, cantidad, precio promedio)\n\n";
   const CRYPTO = {btc:"bitcoin",bitcoin:"bitcoin",eth:"ethereum",ethereum:"ethereum",sol:"solana",solana:"solana",xrp:"ripple",ada:"cardano",doge:"dogecoin",bnb:"binancecoin",usdt:"tether",usdc:"usd-coin",ltc:"litecoin",dot:"polkadot",avax:"avalanche-2",link:"chainlink",trx:"tron",matic:"matic-network",pol:"matic-network",ton:"the-open-network"};
   const CNAME = {bitcoin:"Bitcoin",ethereum:"Ethereum",solana:"Solana",ripple:"XRP",cardano:"Cardano",dogecoin:"Dogecoin",binancecoin:"BNB",tether:"USDT","usd-coin":"USDC",litecoin:"Litecoin",polkadot:"Polkadot","avalanche-2":"Avalanche",chainlink:"Chainlink",tron:"Tron","matic-network":"Polygon","the-open-network":"Toncoin"};
   const FX = {dolar:["CLP=X","Dólar (USD/CLP)"],usd:["CLP=X","Dólar (USD/CLP)"],usdclp:["CLP=X","Dólar (USD/CLP)"],euro:["EURCLP=X","Euro (EUR/CLP)"],eur:["EURCLP=X","Euro (EUR/CLP)"]};
+  const PALETTE = ["#3b5bff","#7a5cff","#14b8a6","#f59e0b","#ec4899","#22c55e","#0ea5e9","#a855f7","#ef4444","#64748b"];
 
   const $ = id => document.getElementById(id);
+  const enc = new TextEncoder(), dec = new TextDecoder();
   const nf = (x, d) => x == null || isNaN(x) ? "—" : new Intl.NumberFormat("es-CL", {minimumFractionDigits: d, maximumFractionDigits: d}).format(x);
   const fmt = x => x == null ? "—" : nf(x, Math.abs(x) >= 10000 ? 0 : Math.abs(x) < 1 ? 4 : 2);
   const pct = x => x == null || isNaN(x) ? "—" : (x >= 0 ? "+" : "") + nf(x, 2) + "%";
-  const norm = s => (s || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-
+  const qty = x => nf(x, x % 1 ? 6 : 0).replace(/(,\d*?)0+$/, "$1").replace(/,$/, "");
+  const norm = s => (s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   function parseNum(t) {
-    t = String(t || "").trim().toLowerCase().replace(/[$%\s]/g, "");
+    t = String(t ?? "").trim().toLowerCase().replace(/[$%\s]/g, "");
     if (!t) return null;
     let mult = 1;
     if (t.endsWith("k")) { mult = 1e3; t = t.slice(0, -1); } else if (t.endsWith("m")) { mult = 1e6; t = t.slice(0, -1); }
@@ -229,272 +306,386 @@ code{font-family:var(--f-mono);font-size:13px;background:var(--chip);padding:1px
     return isNaN(n) ? null : n * mult;
   }
   const parseLevels = s => String(s || "").split(/[\/;]+/).map(parseNum).filter(n => n != null && n > 0);
-  const showLevels = arr => (arr || []).map(fmt).join(" / ");
-
-  function resolve(sym, mkt) {
+  const showLevels = a => (a || []).map(fmt).join(" / ");
+  const aid = a => a.id || a.symbol;
+  function resolve(sym, chile) {
     const k = norm(sym);
     if (CRYPTO[k]) { const cg = CRYPTO[k]; return {symbol: cg, id: (k.length <= 5 ? k : cg).replace(/-/g, "_") + "_usd", source: "coingecko", currency: "usd", name: CNAME[cg] || cg, unit: "USD"}; }
-    if (FX[k]) return {symbol: FX[k][0], name: FX[k][1], unit: "CLP"};
+    if (FX[k]) return {symbol: FX[k][0], id: FX[k][0], name: FX[k][1], unit: "CLP"};
     if (k === "uf") return {symbol: "uf", id: "uf", source: "mindicador", name: "UF", unit: "CLP"};
-    let s = sym.trim().toUpperCase();
-    if (mkt === "sn" && !s.endsWith(".SN")) s += ".SN";
-    return {symbol: s, name: s, unit: s.endsWith(".SN") ? "CLP" : "USD"};
+    let s = sym.trim().toUpperCase().replace(/\s+/g, "");
+    if (chile && !s.endsWith(".SN")) s += ".SN";
+    return {symbol: s, id: s, name: s.replace(/\.SN$/, ""), unit: s.endsWith(".SN") ? "CLP" : "USD"};
   }
-  const aid = a => a.id || a.symbol;
 
-  // ---------- estado ----------
-  let token = null, cfg = null, sha = null, estado = null, dirty = false, busy = false;
-  try { token = localStorage.getItem("gh_token_agente"); } catch (e) {}
+  // ---------------- cifrado (la clave de GitHub queda cifrada con tu contraseña) ----------------
+  const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  async function keyFrom(pass, salt, iter) {
+    const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({name: "PBKDF2", salt, iterations: iter, hash: "SHA-256"}, base, {name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]);
+  }
+  async function seal(secret, pass) {
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 600000;
+    const ct = await crypto.subtle.encrypt({name: "AES-GCM", iv}, await keyFrom(pass, salt, iter), enc.encode(secret));
+    return {v: 1, kdf: "PBKDF2-SHA256", iter, salt: b64(salt), iv: b64(iv), ct: b64(ct)};
+  }
+  async function open(vault, pass) {
+    const k = await keyFrom(pass, unb64(vault.salt), vault.iter);
+    return dec.decode(await crypto.subtle.decrypt({name: "AES-GCM", iv: unb64(vault.iv)}, k, unb64(vault.ct)));
+  }
 
-  function setMsg(text, kind) { const m = $("msg"); m.textContent = text; m.className = "msg" + (kind ? " " + kind : ""); }
-  function setDirty(v) { dirty = v; $("btn-save").disabled = !v || busy; if (v) setMsg("Tienes cambios sin guardar."); }
+  // ---------------- almacenamiento local ----------------
+  const LS = {get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+              set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+              del: k => { try { localStorage.removeItem(k); } catch (e) {} }};
 
-  async function gh(path, opts = {}) {
-    const r = await fetch(API + path, {...opts, headers: {"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(opts.headers || {})}});
-    if (r.status === 401) throw new Error("La clave no es válida o expiró. Desconecta y vuelve a conectar.");
-    if (r.status === 403) throw new Error("La clave no tiene permisos suficientes (Contents y Actions: Read and write).");
-    if (r.status === 404) throw new Error("No encuentro el repositorio. Revisa que la clave tenga acceso a agente-mercados.");
+  // ---------------- GitHub ----------------
+  let token = null;
+  async function gh(repo, path, opts = {}) {
+    const r = await fetch(API(repo) + path, {...opts, cache: "no-store", headers: {"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(opts.headers || {})}});
+    if (r.status === 401) { const e = new Error("La clave de GitHub guardada dejó de funcionar (venció o fue borrada)."); e.code = 401; throw e; }
     return r;
   }
-  const b64dec = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g, "")), c => c.charCodeAt(0)));
-  const b64enc = s => { const bytes = new TextEncoder().encode(s); let bin = ""; bytes.forEach(b => bin += String.fromCharCode(b)); return btoa(bin); };
-
-  async function getFile(path) {
-    const r = await gh(`/contents/${path}?ref=main&t=${Date.now()}`, {cache: "no-store"});
-    if (!r.ok) return null;
+  const b64dec = b => dec.decode(Uint8Array.from(atob(b.replace(/\n/g, "")), c => c.charCodeAt(0)));
+  const b64enc = s => { const by = enc.encode(s); let bin = ""; by.forEach(x => bin += String.fromCharCode(x)); return btoa(bin); };
+  async function getFile(repo, path) {
+    const r = await gh(repo, `/contents/${path}?ref=main&t=${Date.now()}`);
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error("No pude leer " + path + " (" + r.status + ")");
     const j = await r.json();
     return {text: b64dec(j.content), sha: j.sha};
   }
-
-  async function load() {
-    setMsg("Cargando…");
-    const [conf, est] = await Promise.all([getFile("alerts.yaml"), getFile("estado.json").catch(() => null)]);
-    if (!conf) throw new Error("No encontré alerts.yaml en el repositorio.");
-    cfg = jsyaml.load(conf.text) || {};
-    cfg.settings = cfg.settings || {}; cfg.assets = cfg.assets || []; cfg.portfolio = cfg.portfolio || [];
-    sha = conf.sha;
-    estado = est ? JSON.parse(est.text) : null;
-    setConn(true);
-    ["assets-sec", "general-sec", "pf-sec", "bar", "foot"].forEach(id => $(id).hidden = false);
-    $("connect").hidden = true;
-    render(); setDirty(false); setMsg("Todo guardado.");
+  async function putFile(repo, path, text, sha, msg) {
+    return gh(repo, `/contents/${path}`, {method: "PUT", body: JSON.stringify({message: msg, content: b64enc(text), sha: sha || undefined, branch: "main"})});
   }
 
-  function setConn(ok, text) {
-    $("pill-conn").className = "pill " + (ok ? "ok" : "err");
-    $("conn-text").textContent = text || (ok ? "Conectado a tu agente" : "Sin conectar");
-  }
+  // ---------------- UI helpers ----------------
+  let toastT;
+  function toast(msg, kind) { const t = $("toast"); t.textContent = msg; t.className = "toast " + (kind || ""); t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4200); }
+  function show(view) { ["v-login", "v-setup", "v-app"].forEach(v => $(v).hidden = v !== view); }
+  function setPill(kind, text) { $("pill").className = "pill " + (kind || ""); $("pill-t").textContent = text; }
 
+  // ---------------- estado de la app ----------------
+  let cfg = null, cfgSha = null, saved = null, estado = null, dirty = false, tab = "assets";
   const price = a => estado && estado.precios && estado.precios[aid(a)] || null;
+  const amap = () => Object.fromEntries((cfg.assets || []).map(a => [aid(a), a]));
+  function markDirty() { dirty = true; $("savebar").hidden = false; }
 
-  // ---------- render ----------
+  async function loadData() {
+    const [c, e] = await Promise.all([getFile(AGENT, "alerts.yaml"), getFile(AGENT, "estado.json").catch(() => null)]);
+    if (!c) throw new Error("No encuentro la configuración del agente.");
+    cfg = jsyaml.load(c.text) || {}; cfgSha = c.sha; saved = c.text;
+    cfg.settings = cfg.settings || {}; cfg.assets = cfg.assets || []; cfg.portfolio = cfg.portfolio || [];
+    estado = e ? JSON.parse(e.text) : null;
+    dirty = false; $("savebar").hidden = true;
+    render();
+  }
+
+  // ---------------- render ----------------
+  function initials(a) { const n = (a.name || a.symbol).replace(/[^A-Za-z0-9ÁÉÍÓÚÑáéíóúñ ]/g, " ").trim().split(/\s+/); return ((n[0] || "?")[0] + (n[1] ? n[1][0] : (n[0] || "")[1] || "")).toUpperCase(); }
+  function colorFor(i) { return PALETTE[i % PALETTE.length]; }
+
+  function totals() {
+    const m = amap(); const rows = []; let usd = 0, clp = 0, invUsd = 0, invClp = 0;
+    const fxA = cfg.assets.find(a => a.symbol === "CLP=X"); const fx = fxA && price(fxA) ? price(fxA).price : null;
+    cfg.portfolio.forEach(h => {
+      const a = m[h.id] || {name: h.id, symbol: h.id, unit: h.unit};
+      const q = price(a); const unit = a.unit || h.unit || "";
+      const val = q ? h.qty * q.price : null, inv = h.qty * h.avg_price;
+      if (val != null) { if (unit === "CLP") { clp += val; invClp += inv; } else { usd += val; invUsd += inv; } }
+      rows.push({h, a, q, unit, val, inv, pl: val == null ? null : val - inv});
+    });
+    const totalClp = fx ? usd * fx + clp : null, invTotalClp = fx ? invUsd * fx + invClp : null;
+    return {rows, usd, clp, invUsd, invClp, fx, totalClp, invTotalClp};
+  }
+
   function render() {
+    const t = totals();
     if (estado && estado.actualizado) {
       const d = new Date(estado.actualizado);
-      $("updated").textContent = "Precios al " + d.toLocaleString("es-CL", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
-    } else $("updated").textContent = "Precios disponibles tras la próxima revisión";
+      $("updated").textContent = "Precios al " + d.toLocaleString("es-CL", {day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"});
+    } else $("updated").textContent = "Esperando la primera revisión";
 
-    const rows = $("rows"); rows.textContent = "";
-    rows.insertAdjacentHTML("beforeend", `<div class="row head label"><span>Activo</span><span>Precio</span><span>Hoy</span><span>Piso</span><span>Techo</span><span>% día</span><span></span></div>`);
-    if (!cfg.assets.length) rows.insertAdjacentHTML("beforeend", `<div class="empty">Aún no vigilas ningún activo. Agrega el primero abajo.</div>`);
-    cfg.assets.forEach((a, i) => {
-      const q = price(a);
-      const p = q ? q.price : null, chg = q && q.prev_close ? (q.price / q.prev_close - 1) * 100 : null;
-      const low = p != null && (a.below || []).some(x => p <= x), high = p != null && (a.above || []).some(x => p >= x);
-      const row = document.createElement("div");
-      row.className = "row" + (low ? " hit-low" : high ? " hit-high" : "");
-      row.innerHTML = `
-        <div class="name"><b></b><small></small></div>
-        <div><span class="mlabel">Precio</span><span class="num p"></span></div>
-        <div><span class="mlabel">Hoy</span><span class="num chg ${chg == null ? "" : chg >= 0 ? "up" : "down"}">${pct(chg)}</span></div>
-        <label><span class="mlabel">Piso</span><input class="num" data-k="below" inputmode="decimal" id="lo-${i}"></label>
-        <label><span class="mlabel">Techo</span><input class="num" data-k="above" inputmode="decimal" id="hi-${i}"></label>
-        <label><span class="mlabel">% día</span><input class="num" data-k="pct" inputmode="decimal" id="pc-${i}"></label>
-        <button class="ghost del" type="button" title="Dejar de vigilar" aria-label="Quitar">✕</button>`;
-      row.querySelector("b").textContent = a.name || a.symbol;
-      if (low) row.querySelector("b").insertAdjacentHTML("beforeend", `<span class="tag low">bajo el piso</span>`);
-      if (high) row.querySelector("b").insertAdjacentHTML("beforeend", `<span class="tag high">sobre el techo</span>`);
-      row.querySelector("small").textContent = `${a.symbol} · ${a.unit || ""}`;
-      row.querySelector(".p").textContent = p == null ? "pendiente" : fmt(p);
-      const [lo, hi, pc] = row.querySelectorAll("input");
-      lo.value = showLevels(a.below); hi.value = showLevels(a.above);
-      pc.value = a.pct_up != null ? nf(a.pct_up, a.pct_up % 1 ? 1 : 0) : "";
-      lo.onchange = () => { const v = parseLevels(lo.value); v.length ? a.below = v.sort((x, y) => y - x) : delete a.below; lo.value = showLevels(a.below); setDirty(true); };
-      hi.onchange = () => { const v = parseLevels(hi.value); v.length ? a.above = v.sort((x, y) => x - y) : delete a.above; hi.value = showLevels(a.above); setDirty(true); };
-      pc.onchange = () => { const v = parseNum(pc.value); if (v) { a.pct_up = a.pct_down = Math.abs(v); } else { delete a.pct_up; delete a.pct_down; pc.value = ""; } setDirty(true); };
-      row.querySelector(".del").onclick = () => { cfg.assets.splice(i, 1); setDirty(true); render(); };
-      rows.appendChild(row);
-    });
-
-    const g = cfg.settings.global_pct;
-    $("gen-on").checked = !!g; $("gen-pct").value = g ? nf(g, g % 1 ? 1 : 0) : "8"; $("gen-pct").disabled = !g;
-    renderPortfolio();
-  }
-
-  function renderPortfolio() {
-    const amap = {}; cfg.assets.forEach(a => amap[aid(a)] = a);
-    const dl = $("t-list"); dl.textContent = "";
-    cfg.assets.forEach(a => { const o = document.createElement("option"); o.value = a.name || a.symbol; dl.appendChild(o); });
-
-    const pr = $("prows"); pr.textContent = "";
-    pr.insertAdjacentHTML("beforeend", `<div class="prow head label"><span>Activo</span><span>Cantidad</span><span>Compra prom.</span><span>Precio hoy</span><span>Valor</span><span>Ganancia</span><span></span></div>`);
-    const tot = {};
-    if (!cfg.portfolio.length) pr.insertAdjacentHTML("beforeend", `<div class="empty">Registra tu primera compra abajo y la verás aquí y en el resumen diario.</div>`);
-    cfg.portfolio.forEach(h => {
-      const a = amap[h.id] || {name: h.id, unit: h.unit};
-      const q = price(a.symbol ? a : {id: h.id});
-      const unit = a.unit || h.unit || "";
-      const val = q ? h.qty * q.price : null, inv = h.qty * h.avg_price, pl = val == null ? null : val - inv;
-      if (val != null) { tot[unit] = tot[unit] || {v: 0, c: 0}; tot[unit].v += val; tot[unit].c += inv; }
-      const d = document.createElement("div"); d.className = "prow";
-      d.innerHTML = `<div class="name"><b></b></div>
-        <label><span class="mlabel">Cantidad</span><input class="num" inputmode="decimal" id="q-${h.id}"></label>
-        <label><span class="mlabel">Compra prom.</span><input class="num" inputmode="decimal" id="c-${h.id}"></label>
-        <div class="num"><span class="mlabel">Precio hoy</span>${q ? fmt(q.price) : "pendiente"}</div>
-        <div class="num"><span class="mlabel">Valor</span>${val == null ? "—" : fmt(val) + " " + unit}</div>
-        <div class="num chg ${pl == null ? "" : pl >= 0 ? "up" : "down"}"><span class="mlabel">Ganancia</span>${pl == null ? "—" : (pl >= 0 ? "+" : "") + fmt(pl) + " (" + pct(pl / inv * 100) + ")"}</div>
-        <button class="ghost del" type="button" title="Quitar de la cartera" aria-label="Quitar de la cartera">✕</button>`;
-      d.querySelector("b").textContent = a.name || h.id;
-      const [qi, ci] = d.querySelectorAll("input");
-      qi.value = nf(h.qty, h.qty % 1 ? 6 : 0).replace(/(,\d*?)0+$/, "$1").replace(/,$/, "");
-      ci.value = nf(h.avg_price, 2);
-      qi.onchange = () => { const v = parseNum(qi.value); if (v > 0) { h.qty = v; setDirty(true); } renderPortfolio(); };
-      ci.onchange = () => { const v = parseNum(ci.value); if (v > 0) { h.avg_price = v; setDirty(true); } renderPortfolio(); };
-      d.querySelector(".del").onclick = () => { cfg.portfolio = cfg.portfolio.filter(x => x !== h); setDirty(true); renderPortfolio(); setMsg(`${a.name || h.id} quitado de la cartera. Guarda para confirmar.`); };
-      pr.appendChild(d);
-    });
-    const T = $("totals"); T.textContent = "";
-    Object.entries(tot).forEach(([u, t]) => {
-      const pl = t.v - t.c;
-      T.insertAdjacentHTML("beforeend", `<div><span class="label">Total ${u}</span><span class="big">${fmt(t.v)}</span><span class="num chg ${pl >= 0 ? "up" : "down"}">${(pl >= 0 ? "+" : "") + fmt(pl)} (${pct(pl / t.c * 100)})</span></div>`);
-    });
-    const usdA = cfg.assets.find(a => a.symbol === "CLP=X"), usd = usdA && price(usdA);
-    if (usd && tot.USD) {
-      const clp = tot.USD.v * usd.price + (tot.CLP ? tot.CLP.v : 0);
-      T.insertAdjacentHTML("beforeend", `<div><span class="label">Total en pesos</span><span class="big">${fmt(clp)}</span><span class="hint">dólar a ${fmt(usd.price)}</span></div>`);
-    }
-  }
-
-  // ---------- acciones ----------
-  $("add-form").onsubmit = e => {
-    e.preventDefault();
-    const s = $("add-sym").value.trim(); if (!s) return;
-    const a = resolve(s, $("add-mkt").value);
-    a.id = a.id || a.symbol;
-    if (cfg.assets.some(x => norm(x.symbol) === norm(a.symbol))) { setMsg(`${a.name} ya está en la lista.`, "err"); return; }
-    const lo = parseLevels($("add-low").value), hi = parseLevels($("add-high").value), pc = parseNum($("add-pct").value);
-    if (lo.length) a.below = lo.sort((x, y) => y - x);
-    if (hi.length) a.above = hi.sort((x, y) => x - y);
-    if (pc) a.pct_up = a.pct_down = Math.abs(pc);
-    cfg.assets.push(a);
-    ["add-sym", "add-low", "add-high", "add-pct"].forEach(id => $(id).value = "");
-    setDirty(true); render();
-    setMsg(`${a.name} agregado. Su precio aparece después de guardar y aplicar.`);
-  };
-
-  $("gen-on").onchange = () => {
-    const on = $("gen-on").checked; $("gen-pct").disabled = !on;
-    if (on) cfg.settings.global_pct = parseNum($("gen-pct").value) || 8; else delete cfg.settings.global_pct;
-    setDirty(true);
-  };
-  $("gen-pct").onchange = () => { const v = parseNum($("gen-pct").value); if (v) { cfg.settings.global_pct = Math.abs(v); setDirty(true); } };
-
-  $("trade-form").onsubmit = e => {
-    e.preventDefault();
-    const txt = $("t-asset").value.trim(), qty = parseNum($("t-qty").value);
-    if (!txt || !qty || qty <= 0) { $("trade-msg").textContent = "Indica el activo y la cantidad."; return; }
-    let a = cfg.assets.find(x => [x.name, x.symbol, aid(x)].some(v => norm(v) === norm(txt)));
-    if (!a) {
-      const r = resolve(txt, "auto");
-      a = cfg.assets.find(x => norm(x.symbol) === norm(r.symbol));
-      if (!a) { r.id = r.id || r.symbol; cfg.assets.push(a = r); render(); }
-    }
-    const id = aid(a);
-    let p = parseNum($("t-price").value);
-    if (p == null) { const q = price(a); if (!q) { $("trade-msg").textContent = "Aún no tengo el precio de este activo: escribe el precio."; return; } p = q.price; }
-    let h = cfg.portfolio.find(x => x.id === id);
-    if ($("t-kind").value === "buy") {
-      if (h) { const tq = h.qty + qty; h.avg_price = +((h.qty * h.avg_price + qty * p) / tq).toFixed(8); h.qty = +tq.toFixed(10); }
-      else cfg.portfolio.push(h = {id, qty, avg_price: p, unit: a.unit || ""});
-      $("trade-msg").textContent = `Compra anotada: ${nf(qty, qty % 1 ? 4 : 0)} ${a.name} a ${fmt(p)}. Guarda para confirmar.`;
+    // patrimonio
+    if (!cfg.portfolio.length) {
+      $("w-total").textContent = "$0"; $("w-sub").innerHTML = `<span>Registra tus compras en “Mi cartera” para ver tu patrimonio.</span>`;
+      ["k-usd", "k-pl"].forEach(k => $(k).textContent = "—");
+    } else if (t.totalClp != null) {
+      const pl = t.totalClp - t.invTotalClp, p = t.invTotalClp ? pl / t.invTotalClp * 100 : 0;
+      $("w-total").textContent = "$" + nf(t.totalClp, 0);
+      $("w-sub").innerHTML = `<span class="chip">${p >= 0 ? "▲" : "▼"} ${esc(pct(p))}</span><span>${pl >= 0 ? "+" : "−"}$${esc(nf(Math.abs(pl), 0))} CLP desde tus compras</span>`;
+      $("k-usd").textContent = "US$" + nf(t.usd, 0);
+      $("k-pl").textContent = (pl >= 0 ? "+" : "−") + "$" + nf(Math.abs(pl), 0);
     } else {
-      if (!h) { $("trade-msg").textContent = `No tienes ${a.name} en tu cartera.`; return; }
-      const sold = Math.min(qty, h.qty), pl = (p - h.avg_price) * sold;
-      h.qty = +(h.qty - sold).toFixed(10);
-      if (h.qty <= 0) cfg.portfolio = cfg.portfolio.filter(x => x !== h);
-      $("trade-msg").textContent = `Venta anotada: resultado ${(pl >= 0 ? "+" : "") + fmt(pl)} ${a.unit || ""}. Guarda para confirmar.`;
+      $("w-total").textContent = "US$" + nf(t.usd, 0); $("w-sub").textContent = "Pesos pendientes: falta el precio del dólar";
+      $("k-usd").textContent = "US$" + nf(t.usd, 0); $("k-pl").textContent = "—";
     }
-    $("t-qty").value = ""; $("t-price").value = ""; $("t-asset").value = "";
-    setDirty(true); renderPortfolio();
-  };
+    $("k-fx").textContent = t.fx ? "$" + nf(t.fx, 1) : "—";
+
+    // distribución (donut)
+    const parts = t.rows.filter(r => r.val != null).map(r => ({name: r.a.name || r.h.id, v: r.unit === "CLP" ? (t.fx ? r.val / t.fx : 0) : r.val})).filter(p => p.v > 0).sort((a, b) => b.v - a.v);
+    const sum = parts.reduce((s, p) => s + p.v, 0);
+    $("a-count").textContent = cfg.assets.length + " activos vigilados";
+    if (!sum) $("alloc").innerHTML = `<p class="empty-note">Cuando registres compras verás aquí cómo se reparte tu dinero.</p>`;
+    else {
+      let acc = 0; const R = 54, C = 2 * Math.PI * R;
+      const segs = parts.map((p, i) => { const len = p.v / sum * C; const s = `<circle cx="66" cy="66" r="${R}" fill="none" stroke="${colorFor(i)}" stroke-width="18" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-acc}" transform="rotate(-90 66 66)"/>`; acc += len; return s; }).join("");
+      $("alloc").innerHTML = `<svg viewBox="0 0 132 132" role="img" aria-label="Distribución de la cartera"><circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--card2)" stroke-width="18"/>${segs}<text x="66" y="62" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--f-ui)">${parts.length} posiciones</text><text x="66" y="80" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)" font-family="var(--f-num)">US$${esc(nf(sum, 0))}</text></svg>` +
+        `<div class="legend">${parts.slice(0, 6).map((p, i) => `<div><i style="background:${colorFor(i)}"></i><span>${esc(p.name)}</span><em>${nf(p.v / sum * 100, 0)}%</em></div>`).join("")}</div>`;
+    }
+
+    // aviso general
+    const g = cfg.settings.global_pct;
+    $("g-on").checked = !!g; $("g-pct").value = g ? nf(g, g % 1 ? 1 : 0) : "8"; $("g-pct").disabled = !g;
+
+    // activos
+    const L = $("assets"); L.textContent = "";
+    if (!cfg.assets.length) L.innerHTML = `<div class="item"><span></span><span class="muted">Aún no vigilas activos. Pulsa “Agregar activo”.</span></div>`;
+    cfg.assets.forEach((a, i) => {
+      const q = price(a), p = q ? q.price : null, chg = q && q.prev_close ? (q.price / q.prev_close - 1) * 100 : null;
+      const lo = (a.below || []).length ? Math.max(...a.below) : null, hi = (a.above || []).length ? Math.min(...a.above) : null;
+      const low = p != null && (a.below || []).some(x => p <= x), high = p != null && (a.above || []).some(x => p >= x);
+      let range;
+      if (lo != null && hi != null && p != null && hi > lo) {
+        const pos = Math.max(0, Math.min(100, (p - lo) / (hi - lo) * 100));
+        range = `<div class="bar"><i style="left:${pos}%"></i></div><small><span>Piso ${esc(fmt(lo))}</span><span>Techo ${esc(fmt(hi))}</span></small>`;
+      } else if (lo != null || hi != null) {
+        range = `<small><span>${lo != null ? "Piso " + esc(showLevels(a.below)) : "Sin piso"}</span><span>${hi != null ? "Techo " + esc(showLevels(a.above)) : "Sin techo"}</span></small>`;
+      } else range = `<span class="none">${a.pct_up ? "Aviso si se mueve ±" + esc(nf(a.pct_up, a.pct_up % 1 ? 1 : 0)) + "% en el día" : "Sin niveles · solo aviso general"}</span>`;
+      const b = document.createElement("button"); b.type = "button"; b.className = "item";
+      b.innerHTML = `<div class="avatar" style="background:${colorFor(i)}">${esc(initials(a))}</div>
+        <div class="nm"><b>${esc(a.name || a.symbol)}${low ? '<span class="tag low">bajo piso</span>' : high ? '<span class="tag high">sobre techo</span>' : ""}</b><small>${esc(a.symbol)} · ${esc(a.unit || "")}</small></div>
+        <div class="px"><b>${p == null ? "—" : esc(fmt(p))}</b><span class="chip ${chg == null ? "flat" : chg >= 0 ? "up" : "down"}">${chg == null ? "pendiente" : esc(pct(chg))}</span></div>
+        <div class="range">${range}</div>
+        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>`;
+      b.onclick = () => editAsset(a);
+      L.appendChild(b);
+    });
+
+    // cartera
+    const H = $("holdings"); H.textContent = "";
+    if (!t.rows.length) H.innerHTML = `<div class="item"><span></span><span class="muted">Sin posiciones todavía. Pulsa “Registrar operación”.</span></div>`;
+    t.rows.forEach((r, i) => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "item";
+      const pp = r.pl == null ? null : r.inv ? r.pl / r.inv * 100 : 0;
+      b.innerHTML = `<div class="avatar" style="background:${colorFor(i)}">${esc(initials(r.a))}</div>
+        <div class="nm"><b>${esc(r.a.name || r.h.id)}</b><small>${esc(qty(r.h.qty))} × ${esc(fmt(r.h.avg_price))} ${esc(r.unit)}</small></div>
+        <div class="px"><b>${r.val == null ? "—" : esc(fmt(r.val))}</b><span class="chip ${pp == null ? "flat" : pp >= 0 ? "up" : "down"}">${pp == null ? "pendiente" : esc(pct(pp))}</span></div>
+        <div class="range"><small><span>Precio hoy ${r.q ? esc(fmt(r.q.price)) : "—"}</span><span>${r.pl == null ? "" : (r.pl >= 0 ? "+" : "") + esc(fmt(r.pl)) + " " + esc(r.unit)}</span></small></div>
+        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>`;
+      b.onclick = () => editHolding(r.h, r.a);
+      H.appendChild(b);
+    });
+  }
+
+  // ---------------- hojas ----------------
+  function sheet(html, bind) { $("sheet").innerHTML = html; $("scrim").hidden = false; bind($("sheet")); const f = $("sheet").querySelector("input"); if (f) setTimeout(() => f.focus(), 50); }
+  function closeSheet() { $("scrim").hidden = true; $("sheet").innerHTML = ""; }
+  $("scrim").addEventListener("click", e => { if (e.target === $("scrim")) closeSheet(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("scrim").hidden) closeSheet(); });
+
+  function editAsset(a) {
+    const isNew = !a;
+    sheet(`<h3>${isNew ? "Agregar activo" : esc(a.name || a.symbol)}</h3>
+      ${isNew ? `<label class="field">Activo <input id="e-sym" placeholder="BTC, AAPL, SQM-B, dólar…" autocomplete="off"></label>
+      <div class="seg" role="group" aria-label="Mercado"><button type="button" id="m-us" aria-pressed="true">EE.UU., cripto o divisa</button><button type="button" id="m-cl" aria-pressed="false">Bolsa de Santiago</button></div>` :
+      `<p class="hint">${esc(a.symbol)} · precio actual ${esc(price(a) ? fmt(price(a).price) : "pendiente")} ${esc(a.unit || "")}</p>`}
+      <div class="row2"><label class="field">Piso <input id="e-lo" inputmode="decimal" placeholder="opcional"></label><label class="field">Techo <input id="e-hi" inputmode="decimal" placeholder="opcional"></label></div>
+      <label class="field">Aviso si se mueve en el día (%) <input id="e-pc" inputmode="decimal" placeholder="opcional"></label>
+      <p class="hint">Puedes poner varios niveles separados por “/”, por ejemplo 90000 / 85000.</p>
+      <div class="sheet-actions">${isNew ? "" : `<button class="btn danger" type="button" id="e-del">Dejar de vigilar</button>`}<button class="btn primary" type="button" id="e-ok">${isNew ? "Agregar" : "Listo"}</button></div>`,
+    s => {
+      let chile = false;
+      if (isNew) { s.querySelector("#m-us").onclick = () => { chile = false; s.querySelector("#m-us").setAttribute("aria-pressed", "true"); s.querySelector("#m-cl").setAttribute("aria-pressed", "false"); };
+                   s.querySelector("#m-cl").onclick = () => { chile = true; s.querySelector("#m-cl").setAttribute("aria-pressed", "true"); s.querySelector("#m-us").setAttribute("aria-pressed", "false"); }; }
+      else { s.querySelector("#e-lo").value = showLevels(a.below); s.querySelector("#e-hi").value = showLevels(a.above); s.querySelector("#e-pc").value = a.pct_up ? nf(a.pct_up, a.pct_up % 1 ? 1 : 0) : "";
+             s.querySelector("#e-del").onclick = () => { cfg.assets = cfg.assets.filter(x => x !== a); closeSheet(); markDirty(); render(); toast(`${a.name || a.symbol} quitado. Guarda para confirmar.`); }; }
+      s.querySelector("#e-ok").onclick = () => {
+        let t = a;
+        if (isNew) {
+          const sym = s.querySelector("#e-sym").value.trim(); if (!sym) { s.querySelector("#e-sym").focus(); return; }
+          t = resolve(sym, chile);
+          if (cfg.assets.some(x => norm(x.symbol) === norm(t.symbol))) { toast(`${t.name} ya está en tu lista`, "bad"); return; }
+          cfg.assets.push(t);
+        }
+        const lo = parseLevels(s.querySelector("#e-lo").value), hi = parseLevels(s.querySelector("#e-hi").value), pc = parseNum(s.querySelector("#e-pc").value);
+        lo.length ? t.below = lo.sort((x, y) => y - x) : delete t.below;
+        hi.length ? t.above = hi.sort((x, y) => x - y) : delete t.above;
+        pc ? (t.pct_up = t.pct_down = Math.abs(pc)) : (delete t.pct_up, delete t.pct_down);
+        closeSheet(); markDirty(); render();
+      };
+    });
+  }
+
+  function editHolding(h, a) {
+    sheet(`<h3>${esc(a.name || h.id)}</h3>
+      <div class="row2"><label class="field">Cantidad <input id="h-q" inputmode="decimal"></label><label class="field">Precio promedio <input id="h-p" inputmode="decimal"></label></div>
+      <p class="hint">Corrige aquí si te equivocaste al registrar. Para compras o ventas nuevas usa “Registrar operación”.</p>
+      <div class="sheet-actions"><button class="btn danger" type="button" id="h-del">Quitar de la cartera</button><button class="btn primary" type="button" id="h-ok">Listo</button></div>`,
+    s => {
+      s.querySelector("#h-q").value = qty(h.qty); s.querySelector("#h-p").value = nf(h.avg_price, 2);
+      s.querySelector("#h-del").onclick = () => { cfg.portfolio = cfg.portfolio.filter(x => x !== h); closeSheet(); markDirty(); render(); };
+      s.querySelector("#h-ok").onclick = () => { const q = parseNum(s.querySelector("#h-q").value), p = parseNum(s.querySelector("#h-p").value);
+        if (q > 0) h.qty = q; if (p > 0) h.avg_price = p; closeSheet(); markDirty(); render(); };
+    });
+  }
+
+  function trade() {
+    const opts = cfg.assets.map(a => `<option value="${esc(a.name || a.symbol)}">`).join("");
+    sheet(`<h3>Registrar operación</h3>
+      <div class="seg" role="group" aria-label="Tipo"><button type="button" id="o-buy" aria-pressed="true">Compré</button><button type="button" id="o-sell" aria-pressed="false">Vendí</button></div>
+      <label class="field">Activo <input id="o-sym" list="o-list" placeholder="Bitcoin, AAPL, SQM-B.SN…" autocomplete="off"><datalist id="o-list">${opts}</datalist></label>
+      <div class="row2"><label class="field">Cantidad <input id="o-q" inputmode="decimal" placeholder="0,05"></label><label class="field">Precio por unidad <input id="o-p" inputmode="decimal" placeholder="actual"></label></div>
+      <p class="hint">Si dejas el precio vacío uso el último precio del agente.</p>
+      <p class="err" id="o-err" hidden></p>
+      <div class="sheet-actions"><button class="btn" type="button" id="o-x">Cancelar</button><button class="btn primary" type="button" id="o-ok">Registrar</button></div>`,
+    s => {
+      let buy = true;
+      const set = v => { buy = v; s.querySelector("#o-buy").setAttribute("aria-pressed", v); s.querySelector("#o-sell").setAttribute("aria-pressed", !v); };
+      s.querySelector("#o-buy").onclick = () => set(true); s.querySelector("#o-sell").onclick = () => set(false);
+      s.querySelector("#o-x").onclick = closeSheet;
+      s.querySelector("#o-ok").onclick = () => {
+        const err = m => { const e = s.querySelector("#o-err"); e.textContent = m; e.hidden = false; };
+        const txt = s.querySelector("#o-sym").value.trim(), q = parseNum(s.querySelector("#o-q").value);
+        if (!txt) return err("Indica el activo."); if (!q || q <= 0) return err("Indica la cantidad.");
+        let a = cfg.assets.find(x => [x.name, x.symbol, aid(x)].some(v => norm(v) === norm(txt)));
+        if (!a) { const r = resolve(txt, false); a = cfg.assets.find(x => norm(x.symbol) === norm(r.symbol)); if (!a) { cfg.assets.push(a = r); } }
+        let p = parseNum(s.querySelector("#o-p").value);
+        if (p == null) { const pq = price(a); if (!pq) return err("Aún no tengo el precio de este activo: escríbelo."); p = pq.price; }
+        const id = aid(a); let h = cfg.portfolio.find(x => x.id === id);
+        if (buy) {
+          if (h) { const tq = h.qty + q; h.avg_price = +((h.qty * h.avg_price + q * p) / tq).toFixed(8); h.qty = +tq.toFixed(10); }
+          else cfg.portfolio.push({id, qty: q, avg_price: p, unit: a.unit || ""});
+          toast(`Compra anotada: ${qty(q)} ${a.name || a.symbol}. Guarda para confirmar.`);
+        } else {
+          if (!h) return err(`No tienes ${a.name || a.symbol} en tu cartera.`);
+          const sold = Math.min(q, h.qty), pl = (p - h.avg_price) * sold;
+          h.qty = +(h.qty - sold).toFixed(10); if (h.qty <= 0) cfg.portfolio = cfg.portfolio.filter(x => x !== h);
+          toast(`Venta anotada · resultado ${pl >= 0 ? "+" : ""}${fmt(pl)} ${a.unit || ""}`, pl >= 0 ? "ok" : "bad");
+        }
+        closeSheet(); markDirty(); render();
+      };
+    });
+  }
+
+  function settings() {
+    sheet(`<h3>Ajustes</h3>
+      <label class="field">Contraseña actual <input id="c-old" type="password" autocomplete="current-password"></label>
+      <label class="field">Nueva contraseña <input id="c-new" type="password" autocomplete="new-password" minlength="8"></label>
+      <p class="err" id="c-err" hidden></p>
+      <div class="sheet-actions"><button class="btn" type="button" id="c-ok">Cambiar contraseña</button></div>
+      <hr style="border:0;border-top:1px solid var(--line);width:100%">
+      <div class="sheet-actions"><button class="btn danger" type="button" id="c-out">Cerrar sesión en este dispositivo</button></div>`,
+    s => {
+      s.querySelector("#c-out").onclick = () => { LS.del("of_token"); token = null; closeSheet(); location.reload(); };
+      s.querySelector("#c-ok").onclick = async () => {
+        const e = s.querySelector("#c-err"), oldp = s.querySelector("#c-old").value, newp = s.querySelector("#c-new").value;
+        if (newp.length < 8) { e.textContent = "La nueva contraseña debe tener al menos 8 caracteres."; e.hidden = false; return; }
+        try {
+          const vf = await getFile(PANEL, "vault.json"); const v = JSON.parse(vf.text);
+          const t = await open(v, oldp).catch(() => null);
+          if (t !== token) { e.textContent = "La contraseña actual no es correcta."; e.hidden = false; return; }
+          const r = await putFile(PANEL, "vault.json", JSON.stringify(await seal(token, newp)), vf.sha, "Panel: nueva contraseña");
+          if (!r.ok) throw new Error("No pude guardar (" + r.status + ")");
+          closeSheet(); toast("Contraseña cambiada", "ok");
+        } catch (x) { e.textContent = x.message; e.hidden = false; }
+      };
+    });
+  }
+
+  // ---------------- acciones ----------------
+  $("t-assets").onclick = () => setTab("assets"); $("t-pf").onclick = () => setTab("pf");
+  function setTab(t) { tab = t; $("t-assets").setAttribute("aria-selected", t === "assets"); $("t-pf").setAttribute("aria-selected", t === "pf");
+    $("p-assets").hidden = t !== "assets"; $("p-pf").hidden = t !== "pf"; $("tools-assets").hidden = t !== "assets"; $("tools-pf").hidden = t !== "pf"; LS.set("of_tab", t); }
+  $("b-add").onclick = () => editAsset(null);
+  $("b-trade").onclick = trade;
+  $("b-menu").onclick = settings;
+  $("g-on").onchange = () => { const on = $("g-on").checked; $("g-pct").disabled = !on; on ? cfg.settings.global_pct = parseNum($("g-pct").value) || 8 : delete cfg.settings.global_pct; markDirty(); };
+  $("g-pct").onchange = () => { const v = parseNum($("g-pct").value); if (v) { cfg.settings.global_pct = Math.abs(v); markDirty(); } };
+  $("b-discard").onclick = () => { cfg = jsyaml.load(saved); cfg.settings = cfg.settings || {}; cfg.assets = cfg.assets || []; cfg.portfolio = cfg.portfolio || []; dirty = false; $("savebar").hidden = true; render(); };
 
   async function dispatch(modo) {
-    const r = await gh(`/actions/workflows/${WF}/dispatches`, {method: "POST", body: JSON.stringify({ref: "main", inputs: {modo}})});
-    if (r.status !== 204) throw new Error("No pude iniciar la revisión del agente (" + r.status + ").");
+    const r = await gh(AGENT, `/actions/workflows/${WF}/dispatches`, {method: "POST", body: JSON.stringify({ref: "main", inputs: {modo}})});
+    if (r.status !== 204) throw new Error(r.status === 403 ? "La clave no tiene permiso de Actions." : "No pude avisar al agente (" + r.status + ").");
     watchRun();
   }
-
   async function watchRun() {
-    const pill = $("pill-run"); pill.hidden = false; pill.className = "pill run"; $("run-text").textContent = "Agente revisando…";
-    const t0 = Date.now(); let seen = null;
+    setPill("run", "Agente aplicando…");
+    const t0 = Date.now(); let run = null;
     await new Promise(r => setTimeout(r, 5000));
     while (Date.now() - t0 < 240000) {
-      try {
-        const r = await gh(`/actions/workflows/${WF}/runs?per_page=1&event=workflow_dispatch&t=${Date.now()}`);
-        const run = (await r.json()).workflow_runs?.[0];
-        if (run && new Date(run.created_at).getTime() >= t0 - 60000) {
-          seen = run;
-          if (run.status === "completed") break;
-        }
-      } catch (e) {}
+      try { const r = await gh(AGENT, `/actions/workflows/${WF}/runs?per_page=1&event=workflow_dispatch`); const w = (await r.json()).workflow_runs?.[0];
+        if (w && new Date(w.created_at).getTime() >= t0 - 60000) { run = w; if (w.status === "completed") break; } } catch (e) {}
       await new Promise(r => setTimeout(r, 6000));
     }
-    if (seen && seen.status === "completed") {
-      const ok = seen.conclusion === "success";
-      pill.className = "pill " + (ok ? "ok" : "err");
-      $("run-text").textContent = ok ? "Revisión lista · mira Telegram" : "La revisión falló";
-      if (ok) { try { await load(); setMsg("Listo: el agente ya usa tu configuración.", "ok"); } catch (e) {} }
-    } else { pill.className = "pill"; $("run-text").textContent = "Revisión en curso (puede tardar)"; }
+    if (run && run.status === "completed") {
+      if (run.conclusion === "success") { setPill("", "Agente activo"); toast("Listo · el agente ya usa tus cambios", "ok"); loadData().catch(() => {}); }
+      else { setPill("bad", "La revisión falló"); toast("El agente tuvo un problema. Inténtalo de nuevo.", "bad"); }
+    } else setPill("run", "Aplicando (puede tardar)");
   }
-
-  $("btn-save").onclick = async () => {
-    busy = true; $("btn-save").disabled = true; setMsg("Guardando…");
+  $("b-save").onclick = async () => {
+    const b = $("b-save"); b.disabled = true; $("savebar-t").textContent = "Guardando…";
     try {
       const text = HEADER + jsyaml.dump(cfg, {lineWidth: 120, noRefs: true, sortKeys: false});
-      const r = await gh(`/contents/alerts.yaml`, {method: "PUT", body: JSON.stringify({message: "Panel: configuración actualizada", content: b64enc(text), sha, branch: "main"})});
-      if (r.status === 409 || r.status === 422) {
-        busy = false; await load();
-        setMsg("El agente guardó cambios desde Telegram mientras editabas. Recargué la lista: vuelve a hacer tu cambio.", "err");
-        return;
-      }
-      if (!r.ok) throw new Error("No pude guardar (" + r.status + ").");
-      sha = (await r.json()).content.sha;
-      setDirty(false); setMsg("Guardado. Aplicando en el agente…", "ok");
+      const r = await putFile(AGENT, "alerts.yaml", text, cfgSha, "Panel web: configuración actualizada");
+      if (r.status === 409 || r.status === 422) { await loadData(); toast("El agente cambió algo mientras editabas. Recargué tus datos: repite el cambio.", "bad"); return; }
+      if (!r.ok) throw new Error(r.status === 403 ? "La clave no tiene permiso para guardar." : "No pude guardar (" + r.status + ")");
+      cfgSha = (await r.json()).content.sha; saved = text; dirty = false; $("savebar").hidden = true;
+      toast("Guardado · aplicando en el agente…", "ok");
       await dispatch("normal");
-    } catch (e) { setMsg(e.message, "err"); }
-    busy = false; $("btn-save").disabled = !dirty;
+    } catch (e) { toast(e.message, "bad"); if (e.code === 401) logout(); }
+    finally { b.disabled = false; $("savebar-t").textContent = "Tienes cambios sin guardar"; }
   };
-
-  $("btn-summary").onclick = async () => {
-    try { setMsg("Pidiendo el resumen al agente…"); await dispatch("resumen"); setMsg("El resumen llega a tu Telegram en 1–2 minutos.", "ok"); }
-    catch (e) { setMsg(e.message, "err"); }
-  };
-
-  $("token-form").onsubmit = async e => {
-    e.preventDefault();
-    const t = $("token").value.trim(); if (!t) return;
-    token = t;
-    try { await load(); try { localStorage.setItem("gh_token_agente", t); } catch (e) {} $("token").value = ""; }
-    catch (err) { setConn(false, "No conectado"); $("connect").hidden = false; alertBox(err.message); token = null; }
-  };
-  function alertBox(t) { const p = document.createElement("p"); p.className = "hint"; p.style.color = "var(--down)"; p.textContent = t; $("connect").appendChild(p); }
-
-  $("logout").onclick = () => { try { localStorage.removeItem("gh_token_agente"); } catch (e) {} location.reload(); };
+  $("b-summary").onclick = async () => { try { await dispatch("resumen"); toast("El resumen llega a tu Telegram en 1–2 minutos", "ok"); } catch (e) { toast(e.message, "bad"); } };
   window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
-  // ---------- inicio ----------
-  if (token) load().catch(e => { setConn(false, "Error de conexión"); $("connect").hidden = false; alertBox(e.message); });
-  else $("connect").hidden = false;
+  // ---------------- acceso ----------------
+  let vault = null;
+  function logout() { LS.del("of_token"); token = null; show("v-login"); }
+  async function enter(t, remember) {
+    token = t;
+    await loadData();
+    if (remember) LS.set("of_token", t); else LS.del("of_token");
+    show("v-app"); setTab(LS.get("of_tab") === "pf" ? "pf" : "assets");
+  }
+  $("f-login").onsubmit = async e => {
+    e.preventDefault(); const err = $("l-err"); err.hidden = true; $("l-btn").disabled = true; $("l-btn").textContent = "Entrando…";
+    try {
+      const t = await open(vault, $("l-pass").value).catch(() => { throw new Error("Contraseña incorrecta."); });
+      await enter(t, $("l-remember").checked);
+      $("l-pass").value = "";
+    } catch (x) { err.textContent = x.code === 401 ? "La clave de GitHub guardada venció. Avísame para renovarla." : x.message; err.hidden = false; }
+    finally { $("l-btn").disabled = false; $("l-btn").textContent = "Entrar"; }
+  };
+  $("f-setup").onsubmit = async e => {
+    e.preventDefault(); const err = $("s-err"); err.hidden = true;
+    const t = $("s-token").value.trim().replace(/\s+/g, ""), p1 = $("s-pass").value, p2 = $("s-pass2").value;
+    const fail = m => { err.textContent = m; err.hidden = false; $("s-btn").disabled = false; $("s-btn").textContent = "Guardar y entrar"; };
+    if (!/^(github_pat_|ghp_)/.test(t)) return fail("Eso no parece una clave de GitHub: debe empezar con github_pat_.");
+    if (p1.length < 8) return fail("La contraseña debe tener al menos 8 caracteres.");
+    if (p1 !== p2) return fail("Las contraseñas no coinciden.");
+    $("s-btn").disabled = true; $("s-btn").textContent = "Comprobando…";
+    token = t;
+    try {
+      const c = await gh(AGENT, `/contents/alerts.yaml?ref=main`);
+      if (c.status === 404 || c.status === 403) return fail("La clave no tiene acceso a agente-mercados. Revisa el paso 3.");
+      const w = await gh(AGENT, `/actions/workflows`);
+      if (!w.ok) return fail("A la clave le falta el permiso Actions (paso 4).");
+      const prev = await getFile(PANEL, "vault.json").catch(() => null);
+      const r = await putFile(PANEL, "vault.json", JSON.stringify(await seal(t, p1)), prev && prev.sha, "Panel: acceso cifrado");
+      if (!r.ok) return fail("La clave no puede escribir en panel-agente. En el paso 3 marca también panel-agente.");
+      await enter(t, true);
+      toast("¡Listo! Desde ahora entras solo con tu contraseña", "ok");
+    } catch (x) { fail(x.code === 401 ? "GitHub rechazó la clave. Cópiala de nuevo completa." : x.message); }
+  };
+
+  (async function boot() {
+    const t = LS.get("of_token");
+    if (t) { try { await enter(t, true); return; } catch (e) { LS.del("of_token"); } }
+    try { const r = await fetch(VAULT_URL + "?t=" + Date.now(), {cache: "no-store"}); if (r.ok) vault = await r.json(); } catch (e) {}
+    show(vault ? "v-login" : "v-setup");
+  })();
 })();
 </script>
 </body>

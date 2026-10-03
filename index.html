@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Observador Financiero</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<style>
+/* Layout: una columna de trabajo (máx. 960px) — estado arriba, activos, regla general, cartera; barra de acciones fija abajo */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --ink:#14201c; --muted:#5d6b66; --line:#d9e0dd;
+  --accent:#0f6b5c; --accent-ink:#ffffff; --up:#13804f; --down:#c0392b; --warn:#a86a00;
+  --up-bg:#e3f4ea; --down-bg:#fbe7e4; --chip:#e9eeec;
+  --f-display:"Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1513; --surface:#17201d; --ink:#e6eeeb; --muted:#93a39d; --line:#2a3632;
+  --accent:#43b59c; --accent-ink:#06120f; --up:#4cc98a; --down:#ff7a6b; --warn:#e3a43a;
+  --up-bg:#16301f; --down-bg:#3a1a17; --chip:#22302b; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0f1513; --surface:#17201d; --ink:#e6eeeb; --muted:#93a39d; --line:#2a3632;
+  --accent:#43b59c; --accent-ink:#06120f; --up:#4cc98a; --down:#ff7a6b; --warn:#e3a43a;
+  --up-bg:#16301f; --down-bg:#3a1a17; --chip:#22302b; color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);padding:0 16px calc(96px + env(safe-area-inset-bottom,0px));}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:20px;padding-block:24px}
+h1{font:700 clamp(26px,5vw,34px)/1.1 var(--f-display);letter-spacing:-.01em;margin:0;text-wrap:balance}
+h2{font:600 19px/1.2 var(--f-display);margin:0}
+.sub{color:var(--muted);margin:4px 0 0}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.status{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--chip);font-size:13px;color:var(--ink)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.pill.ok .dot{background:var(--up)} .pill.err .dot{background:var(--down)} .pill.run .dot{background:var(--warn);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.pill.run .dot{animation:none}}
+section{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+input,select,button{font:inherit;color:inherit}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);padding:8px 14px;font-weight:500}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.ghost{background:transparent;border-color:transparent;color:var(--muted);padding:6px 8px}
+button.ghost:hover{color:var(--down)}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+/* filas de activos */
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:minmax(150px,1.6fr) 1fr .8fr 1fr 1fr .7fr 32px;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.row.head{border-top:0;padding-top:0}
+.row .name{min-width:0}
+.row .name b{display:block;font-weight:600;overflow-wrap:anywhere}
+.row .name small{color:var(--muted);font-family:var(--f-mono);font-size:12px}
+.chg.up{color:var(--up)} .chg.down{color:var(--down)}
+.row.hit-low{background:linear-gradient(90deg,var(--down-bg),transparent 70%)}
+.row.hit-high{background:linear-gradient(90deg,var(--up-bg),transparent 70%)}
+.tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;font-weight:600}
+.tag.low{background:var(--down-bg);color:var(--down)} .tag.high{background:var(--up-bg);color:var(--up)}
+.mlabel{display:none}
+@media (max-width:720px){
+  .row.head{display:none}
+  .row{grid-template-columns:1fr 1fr 1fr;grid-template-areas:"n n d" "p c ." "lo hi pc";gap:8px 10px;padding:14px 0}
+  .row .name{grid-area:n} .row .del{grid-area:d;justify-self:end;align-self:start}
+  .row > :nth-child(2){grid-area:p} .row > :nth-child(3){grid-area:c}
+  .row > :nth-child(4){grid-area:lo} .row > :nth-child(5){grid-area:hi} .row > :nth-child(6){grid-area:pc}
+  .mlabel{display:block;font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+}
+.add{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr .8fr auto;gap:8px;align-items:end}
+.add label,.field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+@media (max-width:720px){.add{grid-template-columns:1fr 1fr}.add .wide{grid-column:1/-1}}
+.general{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.general input{width:90px}
+.hint{color:var(--muted);font-size:13px;margin:0}
+.totals{display:flex;flex-wrap:wrap;gap:24px}
+.totals div{display:flex;flex-direction:column}
+.totals .big{font:600 22px var(--f-mono);font-variant-numeric:tabular-nums}
+.prow{display:grid;grid-template-columns:minmax(130px,1.4fr) 1fr 1fr 1fr 1.2fr 1.2fr;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
+.prow.head{border-top:0;padding-top:0}
+@media (max-width:720px){.prow.head{display:none}.prow{grid-template-columns:1fr 1fr}.prow .name{grid-column:1/-1}}
+.trade{display:grid;grid-template-columns:1fr 1.5fr 1fr 1fr auto;gap:8px;align-items:end}
+@media (max-width:720px){.trade{grid-template-columns:1fr 1fr}.trade .wide{grid-column:1/-1}}
+.empty{color:var(--muted);padding:12px 0;border-top:1px solid var(--line)}
+
+/* barra inferior */
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));z-index:5}
+.bar .in{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.bar .msg{font-size:14px;color:var(--muted);min-width:0;flex:1 1 220px}
+.bar .msg.err{color:var(--down)} .bar .msg.ok{color:var(--up)}
+.bar .btns{display:flex;flex-wrap:wrap;gap:8px}
+.connect ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.connect a{color:var(--accent)}
+.connect .tokenrow{display:flex;gap:8px;flex-wrap:wrap}
+.connect .tokenrow input{flex:1 1 260px}
+code{font-family:var(--f-mono);font-size:13px;background:var(--chip);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Observador Financiero</h1>
+      <p class="sub">Panel del agente: qué vigila, en qué precios te avisa y tu cartera.</p>
+    </div>
+    <div class="status">
+      <span class="pill" id="pill-conn"><span class="dot"></span><span id="conn-text">Sin conectar</span></span>
+      <span class="pill" id="pill-run" hidden><span class="dot"></span><span id="run-text"></span></span>
+    </div>
+  </header>
+
+  <section class="connect" id="connect" hidden>
+    <h2>Conectar el panel con tu agente</h2>
+    <p class="hint">Se hace una sola vez en cada navegador. La clave queda guardada solo en este dispositivo.</p>
+    <ol>
+      <li>Abre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
+      <li>Nombre: <code>Panel agente</code>. Expiración: la que prefieras (por ejemplo 1 año).</li>
+      <li>En <b>Repository access</b> elige <b>Only select repositories</b> → <code>agente-mercados</code>.</li>
+      <li>En <b>Permissions → Repository permissions</b>: <b>Contents: Read and write</b> y <b>Actions: Read and write</b>.</li>
+      <li>Pulsa <b>Generate token</b>, cópialo y pégalo aquí:</li>
+    </ol>
+    <form class="tokenrow" id="token-form">
+      <input id="token" type="password" autocomplete="off" placeholder="github_pat_…" aria-label="Clave de acceso de GitHub">
+      <button class="primary" type="submit">Conectar</button>
+    </form>
+  </section>
+
+  <section id="assets-sec" hidden>
+    <div class="sec-head">
+      <h2>Activos vigilados</h2>
+      <span class="hint" id="updated"></span>
+    </div>
+    <p class="hint">Piso: te aviso si el precio baja hasta ahí. Techo: si sube hasta ahí. Puedes poner varios niveles separados por <code>/</code>. Deja vacío para no usarlo.</p>
+    <div class="rows" id="rows"></div>
+    <form class="add" id="add-form">
+      <label class="wide">Agregar activo
+        <input id="add-sym" placeholder="BTC, AAPL, SQM-B, dólar…" autocomplete="off">
+      </label>
+      <label>Mercado
+        <select id="add-mkt">
+          <option value="auto">EE.UU. / cripto / divisa</option>
+          <option value="sn">Bolsa de Santiago</option>
+        </select>
+      </label>
+      <label>Piso <input id="add-low" inputmode="decimal" placeholder="opcional"></label>
+      <label>Techo <input id="add-high" inputmode="decimal" placeholder="opcional"></label>
+      <label>% día <input id="add-pct" inputmode="decimal" placeholder="opc."></label>
+      <button type="submit">Agregar</button>
+    </form>
+  </section>
+
+  <section id="general-sec" hidden>
+    <h2>Movimientos fuertes</h2>
+    <div class="general">
+      <label class="field" style="flex-direction:row;align-items:center;gap:10px">
+        <input type="checkbox" id="gen-on" style="width:auto">
+        Avisarme si <b>cualquier</b> activo sube o cae más de
+      </label>
+      <input id="gen-pct" inputmode="decimal" aria-label="Porcentaje general"> <span>% en el día</span>
+    </div>
+  </section>
+
+  <section id="pf-sec" hidden>
+    <div class="sec-head"><h2>Mi cartera</h2><span class="hint">Valores con los últimos precios del agente</span></div>
+    <div class="totals" id="totals"></div>
+    <div id="prows"></div>
+    <form class="trade" id="trade-form">
+      <label>Operación
+        <select id="t-kind"><option value="buy">Compré</option><option value="sell">Vendí</option></select>
+      </label>
+      <label class="wide">Activo <select id="t-asset"></select></label>
+      <label>Cantidad <input id="t-qty" inputmode="decimal" placeholder="0,05"></label>
+      <label>Precio <input id="t-price" inputmode="decimal" placeholder="actual"></label>
+      <button type="submit">Registrar</button>
+    </form>
+    <p class="hint" id="trade-msg"></p>
+  </section>
+
+  <p class="hint" id="foot" hidden>Los cambios se guardan en tu repositorio privado <code>agente-mercados</code>. El bot de Telegram confirma cada revisión. <button class="ghost" id="logout" type="button">Desconectar este navegador</button></p>
+</div>
+
+<div class="bar" id="bar" hidden>
+  <div class="in">
+    <span class="msg" id="msg">Todo guardado.</span>
+    <div class="btns">
+      <button type="button" id="btn-summary">Enviar resumen a Telegram</button>
+      <button type="button" class="primary" id="btn-save" disabled>Guardar y aplicar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const OWNER = "git26866", REPO = "agente-mercados", WF = "monitor.yml";
+  const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
+  const HEADER = "# =====================================================================\n#  LISTA DE ACTIVOS, ALERTAS Y CARTERA\n#  Puedes editarla aquí, desde el panel web o desde Telegram (/ayuda en tu bot).\n# =====================================================================\n#  above: [niveles] = techo · below: [niveles] = piso\n#  pct_up / pct_down = % diario por activo · settings.global_pct = % diario para todos\n#  source: yahoo (por defecto) | coingecko | buda | mindicador\n#  portfolio: tus compras (id del activo, cantidad, precio promedio)\n\n";
+  const CRYPTO = {btc:"bitcoin",bitcoin:"bitcoin",eth:"ethereum",ethereum:"ethereum",sol:"solana",solana:"solana",xrp:"ripple",ada:"cardano",doge:"dogecoin",bnb:"binancecoin",usdt:"tether",usdc:"usd-coin",ltc:"litecoin",dot:"polkadot",avax:"avalanche-2",link:"chainlink",trx:"tron",matic:"matic-network",pol:"matic-network",ton:"the-open-network"};
+  const CNAME = {bitcoin:"Bitcoin",ethereum:"Ethereum",solana:"Solana",ripple:"XRP",cardano:"Cardano",dogecoin:"Dogecoin",binancecoin:"BNB",tether:"USDT","usd-coin":"USDC",litecoin:"Litecoin",polkadot:"Polkadot","avalanche-2":"Avalanche",chainlink:"Chainlink",tron:"Tron","matic-network":"Polygon","the-open-network":"Toncoin"};
+  const FX = {dolar:["CLP=X","Dólar (USD/CLP)"],usd:["CLP=X","Dólar (USD/CLP)"],usdclp:["CLP=X","Dólar (USD/CLP)"],euro:["EURCLP=X","Euro (EUR/CLP)"],eur:["EURCLP=X","Euro (EUR/CLP)"]};
+
+  const $ = id => document.getElementById(id);
+  const nf = (x, d) => x == null || isNaN(x) ? "—" : new Intl.NumberFormat("es-CL", {minimumFractionDigits: d, maximumFractionDigits: d}).format(x);
+  const fmt = x => x == null ? "—" : nf(x, Math.abs(x) >= 10000 ? 0 : Math.abs(x) < 1 ? 4 : 2);
+  const pct = x => x == null || isNaN(x) ? "—" : (x >= 0 ? "+" : "") + nf(x, 2) + "%";
+  const norm = s => (s || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+  function parseNum(t) {
+    t = String(t || "").trim().toLowerCase().replace(/[$%\s]/g, "");
+    if (!t) return null;
+    let mult = 1;
+    if (t.endsWith("k")) { mult = 1e3; t = t.slice(0, -1); } else if (t.endsWith("m")) { mult = 1e6; t = t.slice(0, -1); }
+    if (t.includes(",") && t.includes(".")) t = t.replace(/\./g, "").replace(",", ".");
+    else if (t.includes(",")) t = t.replace(",", ".");
+    else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+    const n = parseFloat(t);
+    return isNaN(n) ? null : n * mult;
+  }
+  const parseLevels = s => String(s || "").split(/[\/;]+/).map(parseNum).filter(n => n != null && n > 0);
+  const showLevels = arr => (arr || []).map(fmt).join(" / ");
+
+  function resolve(sym, mkt) {
+    const k = norm(sym);
+    if (CRYPTO[k]) { const cg = CRYPTO[k]; return {symbol: cg, id: (k.length <= 5 ? k : cg).replace(/-/g, "_") + "_usd", source: "coingecko", currency: "usd", name: CNAME[cg] || cg, unit: "USD"}; }
+    if (FX[k]) return {symbol: FX[k][0], name: FX[k][1], unit: "CLP"};
+    if (k === "uf") return {symbol: "uf", id: "uf", source: "mindicador", name: "UF", unit: "CLP"};
+    let s = sym.trim().toUpperCase();
+    if (mkt === "sn" && !s.endsWith(".SN")) s += ".SN";
+    return {symbol: s, name: s, unit: s.endsWith(".SN") ? "CLP" : "USD"};
+  }
+  const aid = a => a.id || a.symbol;
+
+  // ---------- estado ----------
+  let token = null, cfg = null, sha = null, estado = null, dirty = false, busy = false;
+  try { token = localStorage.getItem("gh_token_agente"); } catch (e) {}
+
+  function setMsg(text, kind) { const m = $("msg"); m.textContent = text; m.className = "msg" + (kind ? " " + kind : ""); }
+  function setDirty(v) { dirty = v; $("btn-save").disabled = !v || busy; if (v) setMsg("Tienes cambios sin guardar."); }
+
+  async function gh(path, opts = {}) {
+    const r = await fetch(API + path, {...opts, headers: {"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(opts.headers || {})}});
+    if (r.status === 401) throw new Error("La clave no es válida o expiró. Desconecta y vuelve a conectar.");
+    if (r.status === 403) throw new Error("La clave no tiene permisos suficientes (Contents y Actions: Read and write).");
+    if (r.status === 404) throw new Error("No encuentro el repositorio. Revisa que la clave tenga acceso a agente-mercados.");
+    return r;
+  }
+  const b64dec = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g, "")), c => c.charCodeAt(0)));
+  const b64enc = s => { const bytes = new TextEncoder().encode(s); let bin = ""; bytes.forEach(b => bin += String.fromCharCode(b)); return btoa(bin); };
+
+  async function getFile(path) {
+    const r = await gh(`/contents/${path}?ref=main&t=${Date.now()}`, {cache: "no-store"});
+    if (!r.ok) return null;
+    const j = await r.json();
+    return {text: b64dec(j.content), sha: j.sha};
+  }
+
+  async function load() {
+    setMsg("Cargando…");
+    const [conf, est] = await Promise.all([getFile("alerts.yaml"), getFile("estado.json").catch(() => null)]);
+    if (!conf) throw new Error("No encontré alerts.yaml en el repositorio.");
+    cfg = jsyaml.load(conf.text) || {};
+    cfg.settings = cfg.settings || {}; cfg.assets = cfg.assets || []; cfg.portfolio = cfg.portfolio || [];
+    sha = conf.sha;
+    estado = est ? JSON.parse(est.text) : null;
+    setConn(true);
+    ["assets-sec", "general-sec", "pf-sec", "bar", "foot"].forEach(id => $(id).hidden = false);
+    $("connect").hidden = true;
+    render(); setDirty(false); setMsg("Todo guardado.");
+  }
+
+  function setConn(ok, text) {
+    $("pill-conn").className = "pill " + (ok ? "ok" : "err");
+    $("conn-text").textContent = text || (ok ? "Conectado a tu agente" : "Sin conectar");
+  }
+
+  const price = a => estado && estado.precios && estado.precios[aid(a)] || null;
+
+  // ---------- render ----------
+  function render() {
+    if (estado && estado.actualizado) {
+      const d = new Date(estado.actualizado);
+      $("updated").textContent = "Precios al " + d.toLocaleString("es-CL", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
+    } else $("updated").textContent = "Precios disponibles tras la próxima revisión";
+
+    const rows = $("rows"); rows.textContent = "";
+    rows.insertAdjacentHTML("beforeend", `<div class="row head label"><span>Activo</span><span>Precio</span><span>Hoy</span><span>Piso</span><span>Techo</span><span>% día</span><span></span></div>`);
+    if (!cfg.assets.length) rows.insertAdjacentHTML("beforeend", `<div class="empty">Aún no vigilas ningún activo. Agrega el primero abajo.</div>`);
+    cfg.assets.forEach((a, i) => {
+      const q = price(a);
+      const p = q ? q.price : null, chg = q && q.prev_close ? (q.price / q.prev_close - 1) * 100 : null;
+      const low = p != null && (a.below || []).some(x => p <= x), high = p != null && (a.above || []).some(x => p >= x);
+      const row = document.createElement("div");
+      row.className = "row" + (low ? " hit-low" : high ? " hit-high" : "");
+      row.innerHTML = `
+        <div class="name"><b></b><small></small></div>
+        <div><span class="mlabel">Precio</span><span class="num p"></span></div>
+        <div><span class="mlabel">Hoy</span><span class="num chg ${chg == null ? "" : chg >= 0 ? "up" : "down"}">${pct(chg)}</span></div>
+        <label><span class="mlabel">Piso</span><input class="num" data-k="below" inputmode="decimal" id="lo-${i}"></label>
+        <label><span class="mlabel">Techo</span><input class="num" data-k="above" inputmode="decimal" id="hi-${i}"></label>
+        <label><span class="mlabel">% día</span><input class="num" data-k="pct" inputmode="decimal" id="pc-${i}"></label>
+        <button class="ghost del" type="button" title="Dejar de vigilar" aria-label="Quitar">✕</button>`;
+      row.querySelector("b").textContent = a.name || a.symbol;
+      if (low) row.querySelector("b").insertAdjacentHTML("beforeend", `<span class="tag low">bajo el piso</span>`);
+      if (high) row.querySelector("b").insertAdjacentHTML("beforeend", `<span class="tag high">sobre el techo</span>`);
+      row.querySelector("small").textContent = `${a.symbol} · ${a.unit || ""}`;
+      row.querySelector(".p").textContent = p == null ? "pendiente" : fmt(p);
+      const [lo, hi, pc] = row.querySelectorAll("input");
+      lo.value = showLevels(a.below); hi.value = showLevels(a.above);
+      pc.value = a.pct_up != null ? nf(a.pct_up, a.pct_up % 1 ? 1 : 0) : "";
+      lo.onchange = () => { const v = parseLevels(lo.value); v.length ? a.below = v.sort((x, y) => y - x) : delete a.below; lo.value = showLevels(a.below); setDirty(true); };
+      hi.onchange = () => { const v = parseLevels(hi.value); v.length ? a.above = v.sort((x, y) => x - y) : delete a.above; hi.value = showLevels(a.above); setDirty(true); };
+      pc.onchange = () => { const v = parseNum(pc.value); if (v) { a.pct_up = a.pct_down = Math.abs(v); } else { delete a.pct_up; delete a.pct_down; pc.value = ""; } setDirty(true); };
+      row.querySelector(".del").onclick = () => { cfg.assets.splice(i, 1); setDirty(true); render(); };
+      rows.appendChild(row);
+    });
+
+    const g = cfg.settings.global_pct;
+    $("gen-on").checked = !!g; $("gen-pct").value = g ? nf(g, g % 1 ? 1 : 0) : "8"; $("gen-pct").disabled = !g;
+    renderPortfolio();
+  }
+
+  function renderPortfolio() {
+    const amap = {}; cfg.assets.forEach(a => amap[aid(a)] = a);
+    const sel = $("t-asset"), keep = sel.value; sel.textContent = "";
+    cfg.assets.forEach(a => { const o = document.createElement("option"); o.value = aid(a); o.textContent = a.name || a.symbol; sel.appendChild(o); });
+    if (keep) sel.value = keep;
+
+    const pr = $("prows"); pr.textContent = "";
+    pr.insertAdjacentHTML("beforeend", `<div class="prow head label"><span>Activo</span><span>Cantidad</span><span>Compra prom.</span><span>Precio hoy</span><span>Valor</span><span>Ganancia</span></div>`);
+    const tot = {};
+    if (!cfg.portfolio.length) pr.insertAdjacentHTML("beforeend", `<div class="empty">Registra tu primera compra abajo y la verás aquí y en el resumen diario.</div>`);
+    cfg.portfolio.forEach(h => {
+      const a = amap[h.id] || {name: h.id, unit: h.unit};
+      const q = price(a.symbol ? a : {id: h.id});
+      const unit = a.unit || h.unit || "";
+      const val = q ? h.qty * q.price : null, inv = h.qty * h.avg_price, pl = val == null ? null : val - inv;
+      if (val != null) { tot[unit] = tot[unit] || {v: 0, c: 0}; tot[unit].v += val; tot[unit].c += inv; }
+      const d = document.createElement("div"); d.className = "prow";
+      d.innerHTML = `<div class="name"><b></b></div>
+        <div class="num"><span class="mlabel">Cantidad</span>${nf(h.qty, h.qty % 1 ? 4 : 0)}</div>
+        <div class="num"><span class="mlabel">Compra prom.</span>${fmt(h.avg_price)}</div>
+        <div class="num"><span class="mlabel">Precio hoy</span>${q ? fmt(q.price) : "pendiente"}</div>
+        <div class="num"><span class="mlabel">Valor</span>${val == null ? "—" : fmt(val) + " " + unit}</div>
+        <div class="num chg ${pl == null ? "" : pl >= 0 ? "up" : "down"}"><span class="mlabel">Ganancia</span>${pl == null ? "—" : (pl >= 0 ? "+" : "") + fmt(pl) + " (" + pct(pl / inv * 100) + ")"}</div>`;
+      d.querySelector("b").textContent = a.name || h.id;
+      pr.appendChild(d);
+    });
+    const T = $("totals"); T.textContent = "";
+    Object.entries(tot).forEach(([u, t]) => {
+      const pl = t.v - t.c;
+      T.insertAdjacentHTML("beforeend", `<div><span class="label">Total ${u}</span><span class="big">${fmt(t.v)}</span><span class="num chg ${pl >= 0 ? "up" : "down"}">${(pl >= 0 ? "+" : "") + fmt(pl)} (${pct(pl / t.c * 100)})</span></div>`);
+    });
+    const usdA = cfg.assets.find(a => a.symbol === "CLP=X"), usd = usdA && price(usdA);
+    if (usd && tot.USD) {
+      const clp = tot.USD.v * usd.price + (tot.CLP ? tot.CLP.v : 0);
+      T.insertAdjacentHTML("beforeend", `<div><span class="label">Total en pesos</span><span class="big">${fmt(clp)}</span><span class="hint">dólar a ${fmt(usd.price)}</span></div>`);
+    }
+  }
+
+  // ---------- acciones ----------
+  $("add-form").onsubmit = e => {
+    e.preventDefault();
+    const s = $("add-sym").value.trim(); if (!s) return;
+    const a = resolve(s, $("add-mkt").value);
+    a.id = a.id || a.symbol;
+    if (cfg.assets.some(x => norm(x.symbol) === norm(a.symbol))) { setMsg(`${a.name} ya está en la lista.`, "err"); return; }
+    const lo = parseLevels($("add-low").value), hi = parseLevels($("add-high").value), pc = parseNum($("add-pct").value);
+    if (lo.length) a.below = lo.sort((x, y) => y - x);
+    if (hi.length) a.above = hi.sort((x, y) => x - y);
+    if (pc) a.pct_up = a.pct_down = Math.abs(pc);
+    cfg.assets.push(a);
+    ["add-sym", "add-low", "add-high", "add-pct"].forEach(id => $(id).value = "");
+    setDirty(true); render();
+    setMsg(`${a.name} agregado. Su precio aparece después de guardar y aplicar.`);
+  };
+
+  $("gen-on").onchange = () => {
+    const on = $("gen-on").checked; $("gen-pct").disabled = !on;
+    if (on) cfg.settings.global_pct = parseNum($("gen-pct").value) || 8; else delete cfg.settings.global_pct;
+    setDirty(true);
+  };
+  $("gen-pct").onchange = () => { const v = parseNum($("gen-pct").value); if (v) { cfg.settings.global_pct = Math.abs(v); setDirty(true); } };
+
+  $("trade-form").onsubmit = e => {
+    e.preventDefault();
+    const id = $("t-asset").value, qty = parseNum($("t-qty").value);
+    const a = cfg.assets.find(x => aid(x) === id);
+    if (!a || !qty || qty <= 0) { $("trade-msg").textContent = "Elige un activo e indica la cantidad."; return; }
+    let p = parseNum($("t-price").value);
+    if (p == null) { const q = price(a); if (!q) { $("trade-msg").textContent = "Aún no tengo el precio de este activo: escribe el precio."; return; } p = q.price; }
+    let h = cfg.portfolio.find(x => x.id === id);
+    if ($("t-kind").value === "buy") {
+      if (h) { const tq = h.qty + qty; h.avg_price = +((h.qty * h.avg_price + qty * p) / tq).toFixed(8); h.qty = +tq.toFixed(10); }
+      else cfg.portfolio.push(h = {id, qty, avg_price: p, unit: a.unit || ""});
+      $("trade-msg").textContent = `Compra anotada: ${nf(qty, qty % 1 ? 4 : 0)} ${a.name} a ${fmt(p)}. Guarda para confirmar.`;
+    } else {
+      if (!h) { $("trade-msg").textContent = `No tienes ${a.name} en tu cartera.`; return; }
+      const sold = Math.min(qty, h.qty), pl = (p - h.avg_price) * sold;
+      h.qty = +(h.qty - sold).toFixed(10);
+      if (h.qty <= 0) cfg.portfolio = cfg.portfolio.filter(x => x !== h);
+      $("trade-msg").textContent = `Venta anotada: resultado ${(pl >= 0 ? "+" : "") + fmt(pl)} ${a.unit || ""}. Guarda para confirmar.`;
+    }
+    $("t-qty").value = ""; $("t-price").value = "";
+    setDirty(true); renderPortfolio();
+  };
+
+  async function dispatch(modo) {
+    const r = await gh(`/actions/workflows/${WF}/dispatches`, {method: "POST", body: JSON.stringify({ref: "main", inputs: {modo}})});
+    if (r.status !== 204) throw new Error("No pude iniciar la revisión del agente (" + r.status + ").");
+    watchRun();
+  }
+
+  async function watchRun() {
+    const pill = $("pill-run"); pill.hidden = false; pill.className = "pill run"; $("run-text").textContent = "Agente revisando…";
+    const t0 = Date.now(); let seen = null;
+    await new Promise(r => setTimeout(r, 5000));
+    while (Date.now() - t0 < 240000) {
+      try {
+        const r = await gh(`/actions/workflows/${WF}/runs?per_page=1&event=workflow_dispatch&t=${Date.now()}`);
+        const run = (await r.json()).workflow_runs?.[0];
+        if (run && new Date(run.created_at).getTime() >= t0 - 60000) {
+          seen = run;
+          if (run.status === "completed") break;
+        }
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, 6000));
+    }
+    if (seen && seen.status === "completed") {
+      const ok = seen.conclusion === "success";
+      pill.className = "pill " + (ok ? "ok" : "err");
+      $("run-text").textContent = ok ? "Revisión lista · mira Telegram" : "La revisión falló";
+      if (ok) { try { await load(); setMsg("Listo: el agente ya usa tu configuración.", "ok"); } catch (e) {} }
+    } else { pill.className = "pill"; $("run-text").textContent = "Revisión en curso (puede tardar)"; }
+  }
+
+  $("btn-save").onclick = async () => {
+    busy = true; $("btn-save").disabled = true; setMsg("Guardando…");
+    try {
+      const text = HEADER + jsyaml.dump(cfg, {lineWidth: 120, noRefs: true, sortKeys: false});
+      const r = await gh(`/contents/alerts.yaml`, {method: "PUT", body: JSON.stringify({message: "Panel: configuración actualizada", content: b64enc(text), sha, branch: "main"})});
+      if (r.status === 409 || r.status === 422) {
+        busy = false; await load();
+        setMsg("El agente guardó cambios desde Telegram mientras editabas. Recargué la lista: vuelve a hacer tu cambio.", "err");
+        return;
+      }
+      if (!r.ok) throw new Error("No pude guardar (" + r.status + ").");
+      sha = (await r.json()).content.sha;
+      setDirty(false); setMsg("Guardado. Aplicando en el agente…", "ok");
+      await dispatch("normal");
+    } catch (e) { setMsg(e.message, "err"); }
+    busy = false; $("btn-save").disabled = !dirty;
+  };
+
+  $("btn-summary").onclick = async () => {
+    try { setMsg("Pidiendo el resumen al agente…"); await dispatch("resumen"); setMsg("El resumen llega a tu Telegram en 1–2 minutos.", "ok"); }
+    catch (e) { setMsg(e.message, "err"); }
+  };
+
+  $("token-form").onsubmit = async e => {
+    e.preventDefault();
+    const t = $("token").value.trim(); if (!t) return;
+    token = t;
+    try { await load(); try { localStorage.setItem("gh_token_agente", t); } catch (e) {} $("token").value = ""; }
+    catch (err) { setConn(false, "No conectado"); $("connect").hidden = false; alertBox(err.message); token = null; }
+  };
+  function alertBox(t) { const p = document.createElement("p"); p.className = "hint"; p.style.color = "var(--down)"; p.textContent = t; $("connect").appendChild(p); }
+
+  $("logout").onclick = () => { try { localStorage.removeItem("gh_token_agente"); } catch (e) {} location.reload(); };
+  window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+  // ---------- inicio ----------
+  if (token) load().catch(e => { setConn(false, "Error de conexión"); $("connect").hidden = false; alertBox(e.message); });
+  else $("connect").hidden = false;
+})();
+</script>
+</body>
+</html>

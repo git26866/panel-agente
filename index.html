@@ -149,6 +149,21 @@ code{font-family:var(--f-num);font-size:12.5px;background:var(--card2);border:1p
 .switch input:checked + span{background:var(--accent)}
 .switch input:checked + span::after{transform:translateX(18px)}
 .general input[type=text]{width:72px;padding:7px 10px;text-align:center}
+.radar h4{margin:0 0 10px;font:700 13px var(--f-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.radar h4 small{font:500 12px var(--f-ui);letter-spacing:0;text-transform:none}
+.macro{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.macro::-webkit-scrollbar{display:none}
+.macro div{flex:none;background:var(--card2);border-radius:12px;padding:8px 12px;min-width:118px}
+.macro div span{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.macro div b{display:block;font:600 14px var(--f-num);margin-top:2px}
+.movers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.movers>div{min-width:0}
+.movers h5{margin:0 0 6px;font:700 12.5px var(--f-ui);color:var(--ink)}
+.movers p{margin:0;display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:4px 0;border-top:1px solid var(--line)}
+.movers p span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.movers p em{font:600 12.5px var(--f-num);font-style:normal;flex:none}
+.movers .up em{color:var(--up)} .movers .down em{color:var(--down)}
+@media (max-width:640px){.movers{grid-template-columns:1fr}}
 
 /* ---------- hojas (modales) ---------- */
 .scrim{position:fixed;inset:0;background:rgba(5,8,18,.55);backdrop-filter:blur(3px);z-index:40;display:flex;align-items:flex-end;justify-content:center;padding:16px}
@@ -259,6 +274,7 @@ code{font-family:var(--f-num);font-size:12.5px;background:var(--card2);border:1p
       Avisarme si <b style="color:var(--ink)">cualquier</b> activo sube o cae más de
       <input type="text" id="g-pct" inputmode="decimal" aria-label="Porcentaje"> % en el día
     </div>
+    <div class="card radar" id="radar" hidden></div>
     <div class="list" id="assets"></div>
   </div>
   <div id="p-pf" hidden>
@@ -443,6 +459,9 @@ code{font-family:var(--f-num);font-size:12.5px;background:var(--card2);border:1p
     const g = cfg.settings.global_pct;
     $("g-on").checked = !!g; $("g-pct").value = g ? nf(g, g % 1 ? 1 : 0) : "8"; $("g-pct").disabled = !g;
 
+    // radar del mercado
+    renderRadar();
+
     // activos
     const L = $("assets"); L.textContent = "";
     if (!cfg.assets.length) L.innerHTML = `<div class="item"><span></span><span class="muted">Aún no vigilas activos. Pulsa “Agregar activo”.</span></div>`;
@@ -484,6 +503,21 @@ code{font-family:var(--f-num);font-size:12.5px;background:var(--card2);border:1p
   }
 
   const PHONE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
+  function renderRadar() {
+    const r = estado && estado.radar, R = $("radar");
+    if (!r || !r.macro || !r.macro.length) { R.hidden = true; return; }
+    R.hidden = false;
+    const when = r.actualizado ? new Date(r.actualizado).toLocaleString("es-CL", {hour: "2-digit", minute: "2-digit"}) : "";
+    const cov = r.cobertura || {};
+    const macro = r.macro.map(m => `<div><span>${esc(m.name)}</span><b>${esc(nf(m.price, Math.abs(m.price) < 100 ? 2 : 0))} <span class="chip ${m.pct == null ? "flat" : m.pct >= 0 ? "up" : "down"}" style="display:inline-flex">${m.pct == null ? "—" : esc(pct(m.pct))}</span></b></div>`).join("");
+    const grp = (key, title) => { const mv = (r.movers || {})[key] || {}; const row = (x, cls) => `<p class="${cls}"><span>${esc(x.name)}</span><em>${esc(pct(x.pct))}</em></p>`;
+      return `<div><h5>${title}</h5>${(mv.up || []).slice(0, 3).map(x => row(x, "up")).join("")}${(mv.down || []).slice(0, 3).map(x => row(x, "down")).join("")}</div>`; };
+    const on = cfg.settings.radar !== false;
+    R.innerHTML = `<h4>📡 Radar del mercado <small>${on ? "aviso si algo se mueve ±" + esc(nf(cfg.settings.radar_pct || 10, 0)) + "%" : "avisos apagados"} · ${esc(when)}</small></h4>
+      <div class="macro">${macro}</div>
+      <div class="movers">${grp("sp500", "S&P 500 · " + (cov.sp500 || 0) + " acciones")}${grp("ipsa", "IPSA · " + (cov.ipsa || 0) + " acciones")}${grp("cripto", "Cripto · top " + (cov.cripto || 0))}</div>`;
+  }
+
   // ---------------- hojas ----------------
   function sheet(html, bind) { $("sheet").innerHTML = html; $("scrim").hidden = false; bind($("sheet")); const f = $("sheet").querySelector("input"); if (f) setTimeout(() => f.focus(), 50); }
   function closeSheet() { $("scrim").hidden = true; $("sheet").innerHTML = ""; }
@@ -582,6 +616,11 @@ code{font-family:var(--f-num);font-size:12.5px;background:var(--card2);border:1p
   function settings() {
     const st = cfg.settings;
     sheet(`<h3>Ajustes</h3>
+      <p class="sec-t">Radar del mercado</p>
+      <div class="row2"><label class="field">Avisar si algo del mercado se mueve (%) <input id="r-pct" inputmode="decimal"></label>
+        <label class="callrow" style="align-self:end"><span class="switch"><input type="checkbox" id="r-on" aria-label="Radar activo"><span></span></span><span><b>Activo</b></span></label></div>
+      <p class="hint">Vigila las 500 del S&P 500, las 30 del IPSA y las 100 criptos más grandes, además de tus activos.</p>
+      <hr style="border:0;border-top:1px solid var(--line);width:100%">
       <p class="sec-t">Llamadas por Telegram</p>
       <label class="field">Tu usuario de Telegram <input id="k-user" placeholder="@tu_usuario" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
       <p class="hint">Una sola vez: abre <a href="https://t.me/CallMeBot_txtbot" target="_blank" rel="noopener">@CallMeBot_txtbot</a> en Telegram y pulsa <b>Iniciar</b> para autorizar las llamadas. Luego marca “Llamarme” en los activos que quieras.</p>
@@ -597,6 +636,10 @@ code{font-family:var(--f-num);font-size:12.5px;background:var(--card2);border:1p
       <hr style="border:0;border-top:1px solid var(--line);width:100%">
       <div class="sheet-actions"><button class="btn danger" type="button" id="c-out">Cerrar sesión en este dispositivo</button></div>`,
     s => {
+      const rp = s.querySelector("#r-pct"), ro = s.querySelector("#r-on");
+      rp.value = nf(st.radar_pct || 10, 0); ro.checked = st.radar !== false;
+      rp.onchange = () => { const v = parseNum(rp.value); if (v > 0) { st.radar_pct = Math.abs(v); rp.value = nf(st.radar_pct, st.radar_pct % 1 ? 1 : 0); markDirty(); renderRadar(); } };
+      ro.onchange = () => { ro.checked ? delete st.radar : st.radar = false; markDirty(); renderRadar(); };
       const ku = s.querySelector("#k-user"), km = s.querySelector("#k-max"), ko = s.querySelector("#k-on");
       ku.value = st.call_user || ""; km.value = st.max_calls_per_day || 3; ko.checked = st.calls_enabled !== false;
       ku.onchange = () => { let u = ku.value.trim().replace(/\s+/g, ""); if (u && !/^[@+]/.test(u)) u = "@" + u; ku.value = u; u ? st.call_user = u : delete st.call_user; markDirty(); };
